@@ -1,6 +1,6 @@
 import os
 import logging
-import twitchio
+import twitchio # v3.0.0b3
 import recurso.utils as utils
 from twitchio.ext import commands
 from dotenv import load_dotenv
@@ -40,6 +40,7 @@ class MyComponent(commands.Component):
             roles = utils.rol_user(usuario)
             LOGGER.info(f"{roles}{user_color}{usuario.name}\033[0m ({follow_status}): {payload.text}")
 
+
     @commands.Component.listener()
     async def event_follow(self, payload: twitchio.ChannelFollow) -> None:
         # Evento enviado cuando alguien sigue al canal...
@@ -48,16 +49,19 @@ class MyComponent(commands.Component):
         self.bot.user_followers[usuario] = fecha_creacion
         LOGGER.info(f"\033[1m\033[30m{usuario}\033[0m\033[1m ha seguido al canal!\033[0m")
     
+    
     @commands.Component.listener()
     async def event_custom_redemption_add(self, payload: twitchio.ChannelPointsRedemptionAdd) -> None:
         user_color = utils.get_user_color(payload.user.name, self.bot.user_colors)
         # Evento enviado cuando alguien canjea un punto de canal...
         LOGGER.info(f"{user_color}\033[1m{payload.user.name}\033[0m\033[1m ha canjeado \033[1m\033[30m{payload.reward.title}\033[0m\033[1m | \033[1m\033[30m{payload.reward.cost}\033[0m\033[1m Puntos\033[0m")
 
+
     @commands.Component.listener()
     async def event_raid(self, payload: twitchio.ChannelRaid) -> None:
         # Evento enviado cuando alguien canjea un punto de canal...
         LOGGER.info(f"\033[1m\033[30m{payload.from_broadcaster}\033[0m\033[1m ha hecho un raid con {payload.viewer_count} viewers\033[0m")
+    
     
     @commands.Component.listener()
     async def event_mod_action(self, payload: twitchio.ChannelModerate) -> None:
@@ -67,10 +71,12 @@ class MyComponent(commands.Component):
         elif payload.action == "raid":
             LOGGER.info(f"\033[1m\033[30m{payload.moderator}\033[0m\033[1m ha hecho un raid con {payload.raid.viewer_count} viewers\033[0m")
         
+        
     @commands.Component.listener()
     async def event_channel_update(self, payload: twitchio.ChannelUpdate) -> None:
         # Evento enviado cuando alguien modera el canal...
         LOGGER.info(f"\033[1m{payload.title} - {payload.category_name}\033[0m")
+
 
     @commands.command(aliases=["Hola", "Holiwi", "hey"])
     async def hi(self, ctx: commands.Context) -> None:
@@ -79,6 +85,7 @@ class MyComponent(commands.Component):
         !hi, !Hola, !Holiwi, !hey
         """
         await ctx.reply(f"¡Hola {ctx.chatter.mention}!")
+
 
     @commands.command(aliases=["corte"])
     async def clip(self, ctx: commands.Context) -> None:
@@ -96,6 +103,7 @@ class MyComponent(commands.Component):
         except Exception as e:
             LOGGER.error(f"Error al crear clip: {str(e)}")
 
+
     @commands.command(aliases=["ds"])
     async def discord(self, ctx: commands.Context) -> None:
         """Comando que envía la invitación de discord.
@@ -103,6 +111,7 @@ class MyComponent(commands.Component):
         !discord, !ds
         """
         await ctx.send("Link de discord: discord.gg/UwbUxbj - Igualmente también pueden copiar el código: UwbUxbj")
+
 
     @commands.group(invoke_fallback=True, aliases=["social", "rrss"])
     async def socials(self, ctx: commands.Context) -> None:
@@ -136,6 +145,7 @@ class MyComponent(commands.Component):
         """
         await ctx.send("Link de facebook: facebook.com/TioArcW")
 
+
     #example commands.guard
     @commands.command(aliases=["repeat"])
     @commands.is_moderator() # Solo para moderadores
@@ -145,3 +155,41 @@ class MyComponent(commands.Component):
         !say hello world, !repeat I am cool LUL
         """
         await ctx.send(content)
+        
+        
+    @commands.command(aliases=["settitle"])
+    @commands.is_moderator()  # Solo para moderadores
+    async def title(self, ctx: commands.Context, *, tittle: str) -> None:
+        """Comando solo para moderadores, que cambia el titulo del stream.
+
+        !title Nuevo titulo del stream
+        """
+        await ctx.channel.modify_channel(title=tittle)
+        await ctx.send(f"Titulo cambiado a: {tittle}")
+        
+        
+    @commands.command(aliases=["setgame"])
+    @commands.is_moderator()  # Solo para moderadores
+    async def game(self, ctx: commands.Context, *, game: str) -> None:
+        """Comando solo para moderadores, que cambia el juego del stream.
+
+        !game Nuevo juego del stream
+        """
+        game_id = utils.name_game(self, game)
+        if game_id is not None:
+            await ctx.channel.modify_channel(game_id=game_id)
+            await ctx.send(f"Juego cambiado a: {game}")
+        else:
+            await ctx.send(f"Juego no encontrado: {game} - Revisa la lista de juegos disponibles con ?getgame o ?games.")
+    
+    
+    @commands.command(aliases=["getgame"])
+    @commands.is_moderator()  # Solo para moderadores
+    async def games(self, ctx: commands.Context) -> None:
+        """Comando que envía la lista de juegos disponibles.
+
+        !getgame, !games
+        """
+        games = utils.get_games()
+        await ctx.send(f"Lista de categorias disponibles para cambiar con ?setgame o ?game: {', '.join(games)}")
+        await ctx.send("No importa si esta en mayusculas o minusculas, solo importa que sea el nombre correcto.")

@@ -47,3 +47,22 @@ def rol_user(user) -> str:
         return ""
     
     return f"[{' | '.join(active_roles)}] "
+
+def name_game(game: str) -> str:
+    game = game.lower()
+    game_map = {
+        'dota 2' : "29595",
+        'dota' : "29595",
+        'league of legends' : "21779",
+        'lol' : "21779",
+        'just chatting' : "509658",
+        'charlando' : "509658",
+        'teamfight tactics' : "513143",
+        'tft' : "513143"
+    }
+    return game_map.get(game, None)
+
+def get_games() -> list:
+    games = ['Dota 2 | Dota', 'League of Legends | lol', 'Just Chatting | Charlando',
+             'Teamfight Tactics | TFT']
+    return games

@@ -2,7 +2,7 @@ import os
 import asyncio
 import logging
 import asqlite
-import twitchio
+import twitchio # v3.0.0b3
 import recurso.utils as utils
 from dotenv import load_dotenv
 from clases.bot_class import Bot
