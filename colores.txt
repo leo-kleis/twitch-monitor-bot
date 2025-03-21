@@ -1,0 +1,37 @@
+lsanmartinv: dime los colores que se usan en los print de python como este por ejemplo \033[32m
+
+GitHub Copilot: En Python, los códigos de escape ANSI se utilizan para agregar colores y otros efectos a la salida en la terminal. El formato general es `\033[<código de estilo>;<código de color>m`. Aquí hay una lista de algunos códigos de color comunes:
+
+- **Colores de texto:**
+  - `\033[30m`: Negro
+  - `\033[31m`: Rojo
+  - `\033[32m`: Verde
+  - `\033[33m`: Amarillo
+  - `\033[34m`: Azul
+  - `\033[35m`: Magenta
+  - `\033[36m`: Cian
+  - `\033[37m`: Blanco
+
+- **Colores de fondo:**
+  - `\033[40m`: Fondo negro
+  - `\033[41m`: Fondo rojo
+  - `\033[42m`: Fondo verde
+  - `\033[43m`: Fondo amarillo
+  - `\033[44m`: Fondo azul
+  - `\033[45m`: Fondo magenta
+  - `\033[46m`: Fondo cian
+  - `\033[47m`: Fondo blanco
+
+- **Estilos de texto:**
+  - `\033[0m`: Reiniciar todos los atributos
+  - `\033[1m`: Negrita
+  - `\033[4m`: Subrayado
+  - `\033[7m`: Invertir colores (texto y fondo)
+
+En tu ejemplo, `\033[32m` se utiliza para cambiar el color del texto a verde. Para restablecer el color al predeterminado, se utiliza `\033[0m`. Aquí hay un ejemplo de cómo se vería:
+
+```python
+print("\033[32mEste texto es verde\033[0m y este es el color predeterminado.")
+```
+
+Este código imprimirá "Este texto es verde" en verde y "y este es el color predeterminado" en el color predeterminado de la terminal.

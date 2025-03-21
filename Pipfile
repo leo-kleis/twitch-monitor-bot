@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+python-dotenv = "*"
+twitchio = {extras = ["starlette"], version = "3.0.0b3"}
+asqlite = "2.0.0"
+requests = "2.32.3"
+websockets = "15.0.1"
+
+[dev-packages]
+
+[requires]
+python_version = "3.13"
+python_full_version = "3.13.1"

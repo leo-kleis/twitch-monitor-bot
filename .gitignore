@@ -1,0 +1,18 @@
+# Ignorar carpetas data específicas
+recurso/data/
+bd/data/
+
+# Ignorar la carpeta .env y archivos .env
+.env/
+.env
+
+# Ignorar archivos temporales comunes
+*.log
+*.tmp
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignorar archivos temporales de SQLite
+*.db-shm
+*.db-wal
