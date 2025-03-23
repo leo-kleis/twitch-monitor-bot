@@ -14,7 +14,6 @@ class WebSocketClient:
         self.uri = "wss://irc-ws.chat.twitch.tv:443"
         self.websocket = None
         self.joined_users = set()  # Almacena usuarios conectados
-        self.logger = LOGGER
         self.running = False
         self.userbots = userbots
         self.user_colors = user_colors
@@ -29,29 +28,97 @@ class WebSocketClient:
             await self.websocket.send(f"PASS oauth:{self.oauth_token}")
             await self.websocket.send(f"NICK {self.username}")
             await self.websocket.send("CAP REQ :twitch.tv/membership")  # Habilita eventos JOIN/PART
+            await self.websocket.send("CAP REQ :twitch.tv/commands")    # Habilita eventos como CLEARCHAT
+            await self.websocket.send("CAP REQ :twitch.tv/tags")        # Habilita etiquetas de mensajes           
             await self.websocket.send(f"JOIN #{self.channel}")
             
-            self.logger.info(f"\033[1m\033[42m\033[30m   WebSocket Conectado          \033[0m")
+            LOGGER.info(f"\033[1m\033[42m\033[30m   WebSocket Conectado          \033[0m")
             self.running = True
             return True
         except Exception as e:
-            self.logger.error(f"Error al conectar: {e}")
+            LOGGER.error(f"Error al conectar: {e}")
             return False
+
+    def _parse_tags(self, message):
+        """Analiza las etiquetas IRC y las devuelve como diccionario"""
+        tags_dict = {}
+        if "@" in message:
+            try:
+                tags_part = message.split(" ", 1)[0]
+                if tags_part.startswith("@"):
+                    tags_part = tags_part[1:]  # Quitar @ inicial
+                    
+                # Separa las etiquetas y crea un diccionario
+                for tag in tags_part.split(";"):
+                    if "=" in tag:
+                        key, value = tag.split("=", 1)
+                        tags_dict[key] = value
+            except Exception as e:
+                LOGGER.error(f"Error al parsear etiquetas: {e}")
+        return tags_dict
 
     async def listen(self):
         """Escuchar mensajes del websocket"""
         if not self.websocket:
-            self.logger.error("No hay conexión websocket establecida")
+            LOGGER.error("No hay conexión websocket establecida")
             return
-
+    
         try:
             while self.running:
                 message = await self.websocket.recv()
-
+    
                 # Manejo de PING/PONG
                 if message.startswith("PING"):
                     await self.websocket.send(f"PONG {message.split()[1]}")
-
+                    continue
+    
+                # Manejo de CLEARCHAT (ban, timeout, clear)
+                if "CLEARCHAT" in message:
+                    if "#" + self.channel in message:
+                        tags_dict = self._parse_tags(message)
+                        
+                        # Determinar si es para un usuario específico o limpieza general
+                        is_user_targeted = ":" in message.split("#" + self.channel + " :")
+                        
+                        if is_user_targeted:
+                            # Ban o timeout a un usuario específico
+                            user = message.split("#" + self.channel + " :")[1].strip()
+                            
+                            # Extraer información de moderación
+                            ban_duration = tags_dict.get("ban-duration", None)
+                            ban_reason = tags_dict.get("ban-reason", "").replace("\\s", " ")
+                            
+                            if ban_duration:
+                                action_type = f"timeout por {ban_duration} segundos"
+                                if ban_reason:
+                                    action_type += f" - Razón: {ban_reason}"
+                            else:
+                                action_type = "ban permanente"
+                                if ban_reason:
+                                    action_type += f" - Razón: {ban_reason}"
+                                    
+                            LOGGER.info(f"\033[1m\033[43m\033[30m Usuario {user} recibió {action_type} \033[0m")
+                        else:
+                            # Limpieza completa del chat (/clear)
+                            LOGGER.info(f"\033[1m\033[43m\033[30m Chat limpiado completamente \033[0m")
+                
+                # Manejo de CLEARMSG (eliminación de mensaje individual)
+                elif "CLEARMSG" in message:
+                    if "#" + self.channel in message:
+                        tags_dict = self._parse_tags(message)
+                        
+                        # Extraer información del mensaje eliminado
+                        login = tags_dict.get("login", "desconocido")
+                        target_msg_id = tags_dict.get("target-msg-id", "")
+                        
+                        # Extraer el contenido del mensaje eliminado si está disponible
+                        msg_content = ""
+                        if ":" in message.split("#" + self.channel + " :"):
+                            msg_content = message.split("#" + self.channel + " :")[1].strip()
+                            msg_content = f" - Mensaje: '{msg_content}'"
+                        
+                        LOGGER.info(f"\033[1m\033[43m\033[30m Mensaje de {login} eliminado{msg_content} \033[0m")
+                    
                 # Manejo de múltiples eventos JOIN/PART
                 for line in message.split("\r\n"):
                     if "JOIN" in line:
@@ -66,7 +133,7 @@ class WebSocketClient:
                                 else:
                                     follow_status = "New"
 
-                                self.logger.info(f"{user_color}{user}\033[0m ({follow_status}) \033[32mse unió al canal\033[0m")
+                                LOGGER.info(f"{user_color}{user}\033[0m ({follow_status}) \033[32mse unió al canal\033[0m")
                         except IndexError:
                             pass
 
@@ -82,13 +149,13 @@ class WebSocketClient:
                                 else:
                                     follow_status = "New"
 
-                                self.logger.info(f"{user_color}{user}\033[0m ({follow_status}) \033[31msalió del canal\033[0m")
+                                LOGGER.info(f"{user_color}{user}\033[0m ({follow_status}) \033[31msalió del canal\033[0m")
                         except IndexError:
                             pass
         except websockets.exceptions.ConnectionClosed:
-            self.logger.warning("Conexión websocket cerrada")
+            LOGGER.warning("Conexión websocket cerrada")
         except Exception as e:
-            self.logger.error(f"Error en el websocket: {e}")
+            LOGGER.error(f"Error en el websocket: {e}")
         finally:
             self.running = False
             self.websocket = None
@@ -99,7 +166,7 @@ class WebSocketClient:
         if self.websocket:
             await self.websocket.close()
             self.websocket = None
-            self.logger.info("Desconectado del websocket")
+            LOGGER.info("Desconectado del websocket")
 
     def get_connected_users(self):
         """Obtener la lista de usuarios conectados"""

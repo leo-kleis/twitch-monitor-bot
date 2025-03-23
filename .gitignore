@@ -1,6 +1,8 @@
 # Ignorar carpetas data específicas
-recurso/data/
-bd/data/
+recurso/data
+recurso/chat_gemi
+bd/data
+pruebas
 
 # Ignorar la carpeta .env y archivos .env
 .env/

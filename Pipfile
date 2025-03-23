@@ -9,6 +9,7 @@ twitchio = {extras = ["starlette"], version = "3.0.0b3"}
 asqlite = "2.0.0"
 requests = "2.32.3"
 websockets = "15.0.1"
+google-generativeai = "*"
 
 [dev-packages]
 

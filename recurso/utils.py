@@ -1,6 +1,8 @@
 import os
 import json
 import random
+import google.generativeai as genai
+from dotenv import load_dotenv
 
 def get_user_color(username, user_colors):
     if username not in user_colors:
@@ -66,3 +68,93 @@ def get_games() -> list:
     games = ['Dota 2 | Dota', 'League of Legends | lol', 'Just Chatting | Charlando',
              'Teamfight Tactics | TFT']
     return games
+
+async def iniciar_gemi(self, ctx):
+    load_dotenv()
+    GEMINI_API = os.getenv("IA_API")
+    genai.configure(api_key=GEMINI_API)
+
+    generation_config = {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 40
+    }
+
+    safety_settings = {
+        "HARASSMENT": "BLOCK_MEDIUM_AND_ABOVE",
+        "HATE_SPEECH": "BLOCK_MEDIUM_AND_ABOVE",
+        "SEXUAL": "BLOCK_MEDIUM_AND_ABOVE",
+        "DANGEROUS": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+    
+    tools = [{
+        "function_declarations": [
+            {
+                "name": "change_title",
+                "description": "Cambia el título del stream en Twitch",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "description": "El nuevo título para el stream"
+                        }
+                    },
+                    "required": ["title"]
+                }
+            }
+            #{
+            #    "name": "change_game",
+            #    "description": "Cambia el juego/categoría del stream en Twitch",
+            #    "parameters": {
+            #        "type": "object",
+            #        "properties": {
+            #            "game": {
+            #                "type": "string",
+            #                "description": "El nombre del nuevo juego o categoría"
+            #            }
+            #        },
+            #        "required": ["game"]
+            #    }
+            #}
+        ]
+    }]
+    
+    canal = await ctx.channel.fetch_channel_info(token_for=self.bot.user)
+    broadcaster = canal.user.name
+    titulo = canal.title
+    categoria = canal.game_name
+
+    # Modificamos la instrucción para orientar al modelo a participar en una conversación grupal
+    system_instruction = f"""Eres un asistente educativo participando en una conversación grupal con múltiples personas en la plataforma de Twitch del canal {broadcaster}.
+    
+    INFORMACIÓN CONTEXTUAL:
+    - Título actual del stream: "{titulo}"
+    - Categoría/juego: "{categoria}"
+    
+    Utiliza esta información cuando sea relevante en tus respuestas sin necesidad de preguntar. Por ejemplo, si alguien pregunta por el título o categoría actual, responde directamente.
+    
+    Cada mensaje indicará quién está hablando mediante el formato "Nombre: mensaje".
+    Twitch tiene un límite de 500 caracteres por mensaje, así que asegúrate de que tus respuestas sean concisas y claras.
+    
+    INSTRUCCIÓN IMPORTANTE SOBRE CAMBIO DE TÍTULO:
+    Cuando un usuario pida cambiar el título del stream, SIEMPRE DEBES UTILIZAR LA FUNCIÓN change_title en lugar de solo responder con texto.
+
+    Si el usuario te pide cambiar el titulo del stream y ademas te pregunta sobre algo, primero cambia el titulo y luego responde a la pregunta, en este orden:
+    1. Cambia el titulo del stream usando la funcion change_title("nuevo titulo").
+    2. Responde a la pregunta del usuario (SOLO EN ESTE CASO, cuando cambias titulo + respuesta, el limite sera de 300 caracteres, solo para este caso).
+    
+    Cuando se pregunta sobre programación, solo explica las cosas, pero no entreges código, el chat de Twitch no tiene la capacidad de mostrar salto de lineas.
+    Si existe algun comportamiento inapropiado de alguna persona, ignorar y responder "No responderé a comentarios inapropiados".
+    Tus respuestas no pueden contener salto de lineas, y si quieres agregar un emoji, usa el formato de Twitch para emotes.
+    """
+
+    model = genai.GenerativeModel(
+        model_name='models/gemini-2.0-flash-lite',
+        generation_config=generation_config,
+        safety_settings=safety_settings,
+        system_instruction=system_instruction,
+        tools=tools
+    )
+    
+    return model 

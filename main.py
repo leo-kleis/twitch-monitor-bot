@@ -7,6 +7,7 @@ import recurso.utils as utils
 from dotenv import load_dotenv
 from clases.bot_class import Bot
 from clases.wss_class import WebSocketClient
+from clases.component_class import save_active_chat_history
 
 LOGGER: logging.Logger = logging.getLogger("MAIN")
 LOGGER.setLevel(logging.WARNING)
@@ -56,6 +57,7 @@ def main() -> None:
         asyncio.run(runner())
     except KeyboardInterrupt:
         LOGGER.warning("Apagando debido a KeyboardInterrupt...")
+        save_active_chat_history()
     finally:
         utils.save_user_followers(file_path_user_followers, user_followers)
         utils.save_user_colors(file_path_user_colors, user_colors)
