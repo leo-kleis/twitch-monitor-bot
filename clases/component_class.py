@@ -37,7 +37,7 @@ class MyComponent(commands.Component):
             user_color = utils.get_user_color(usuario.name, self.bot.user_colors)
             LOGGER.info(f"{user_color}{usuario.name}\033[0m (BROADCASTER): {payload.text}")
         elif usuario.name in self.bot.userbots:
-            LOGGER.info(f"\033[93m{usuario.name} (BOT): {payload.text}")
+            LOGGER.info(f"\033[93m{usuario.name}\033[0m (BOT): {payload.text}")
         else:
             user_color = utils.get_user_color(usuario.name, self.bot.user_colors)
             follow = await usuario.follow_info()
@@ -89,6 +89,16 @@ class MyComponent(commands.Component):
         # Evento enviado cuando alguien modera el canal...
         LOGGER.info(f"\033[1m{payload.title} - {payload.category_name}\033[0m")
 
+    @commands.command(aliases=["commands"])
+    async def help(self, ctx: commands.Context, add: str = None) -> None:
+        """Comando que envía la lista de comandos disponibles.
+    
+        !help, !commands
+        """
+        if add == "mod":
+            await ctx.send("Lista de comandos de moderadores: ?settitle, ?setgame, ?getgame, ?on, ?off, ?resp")
+        elif add is None:
+            await ctx.send("Lista de comandos disponibles: ?clip, ?discord, ?socials, ?title")
 
     @commands.command(aliases=["Hola", "Holiwi", "hey"])
     async def hi(self, ctx: commands.Context) -> None:
@@ -131,7 +141,7 @@ class MyComponent(commands.Component):
 
         !socials
         """
-        await ctx.send("discord.gg/UwbUxbj, tiktok.com/@kleis.arc, facebook.com/TioArcW")
+        await ctx.send("discord.gg/UwbUxbj, tiktok.com/@kleisarc, facebook.com/TioArcW")
 
     @socials.command(name="discord", aliases=["ds"])
     async def socials_discord(self, ctx: commands.Context) -> None:
@@ -147,7 +157,7 @@ class MyComponent(commands.Component):
 
         !socials tiktok
         """
-        await ctx.send("Link de tiktok: tiktok.com/@kleis.arc")
+        await ctx.send("Link de tiktok: tiktok.com/@kleisarc")
         
     @socials.command(name="facebook", aliases=["fb"])
     async def socials_facebook(self, ctx: commands.Context) -> None:
@@ -168,10 +178,23 @@ class MyComponent(commands.Component):
         """
         await ctx.send(content)
         
+    @commands.command(aliases=["titulo", "tit"])
+    async def title(self, ctx: commands.Context) -> None:
+        """Comando que envía el titulo del stream.
+
+        !title
+        """
+        user_bot = self.bot.user
+        print(user_bot)
+        channel = await ctx.channel.fetch_channel_info(token_for=user_bot)
+        print(channel)
+        title = channel.title
+        print(title)
+        await ctx.send(f"El título del stream es: {title}")
         
     @commands.command(aliases=["settitle"])
     @commands.is_moderator()  #? Solo para moderadores
-    async def title(self, ctx: commands.Context, *, tittle: str) -> None:
+    async def set_title(self, ctx: commands.Context, *, tittle: str) -> None:
         """Comando solo para moderadores, que cambia el titulo del stream.
 
         !title Nuevo titulo del stream
@@ -182,7 +205,7 @@ class MyComponent(commands.Component):
         
     @commands.command(aliases=["setgame"])
     @commands.is_moderator()  #? Solo para moderadores
-    async def game(self, ctx: commands.Context, *, game: str) -> None:
+    async def set_game(self, ctx: commands.Context, *, game: str) -> None:
         """Comando solo para moderadores, que cambia el juego del stream.
 
         !game Nuevo juego del stream

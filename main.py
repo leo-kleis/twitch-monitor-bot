@@ -52,7 +52,6 @@ def main() -> None:
                 # Si la conexión websocket falla, ejecutar solo el bot
                 LOGGER.warning("No se pudo conectar al websocket. Ejecutando solo el bot.")
                 await bot.start()
-
     try:
         asyncio.run(runner())
     except KeyboardInterrupt:
