@@ -137,7 +137,7 @@ class Gemi:
             return
             
         # Crear la carpeta si no existe
-        chat_dir = os.path.join("recurso", "chat_gemi")
+        chat_dir = os.path.join("recurso/twitch_zk", "chat_gemi")
         os.makedirs(chat_dir, exist_ok=True)
         
         # Generar nombre de archivo con fecha y hora

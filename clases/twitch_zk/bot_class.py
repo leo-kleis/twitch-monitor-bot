@@ -32,7 +32,7 @@ class Bot(commands.Bot):
 
     async def setup_hook(self) -> None:
         # Importación local para evitar referencias circulares
-        from clases.component_class import MyComponent
+        from clases.twitch_zk.component_class import MyComponent
         
         # Agregar nuestro componente que contiene nuestros comandos...
         await self.add_component(MyComponent(self))

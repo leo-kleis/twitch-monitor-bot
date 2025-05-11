@@ -5,6 +5,8 @@ import logging
 
 LOGGER = logging.getLogger("TokenDB")
 
+#* Clase para manejar la base de datos de tokens de Twitch
+#* Esta clase se encarga de almacenar y recuperar tokens de acceso y refresco en una base de datos SQLite.
 class Toker:
     def __init__(self, pool: asqlite.Pool):
         self.token_database = pool

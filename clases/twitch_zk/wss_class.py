@@ -1,6 +1,6 @@
 import logging
 import websockets
-import recurso.utils as utils
+import recurso.twitch_zk.utils as utils
 
 # Configuración del logger específico para WebSocketClient
 LOGGER = logging.getLogger("WSC")

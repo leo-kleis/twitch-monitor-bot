@@ -1,8 +1,8 @@
 import os
 import logging
 import twitchio # v3.0.0b3
-import recurso.utils as utils
-from clases.gemi_class import Gemi
+import recurso.twitch_zk.utils as utils
+from clases.twitch_zk.gemi_class import Gemi
 from twitchio.ext import commands
 from dotenv import load_dotenv
 

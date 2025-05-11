@@ -1,6 +1,6 @@
 # Ignorar carpetas data específicas
-recurso/data
-recurso/chat_gemi
+recurso/twitch_zk/data
+recurso/twitch_zk/chat_gemi
 bd/data
 pruebas
 
