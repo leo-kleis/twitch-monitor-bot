@@ -34,40 +34,80 @@ class MyComponent(commands.Component):
         if usuario.name == BOT_NAME:
             LOGGER.info(f"\033[95m{usuario.name}\033[0m (BOTME): {payload.text}")
         elif usuario.name == BROADCASTER_NAME:
-            user_color = utils.get_user_color(usuario.name, self.bot.user_colors)
-            LOGGER.info(f"{user_color}{usuario.name}\033[0m (BROADCASTER): {payload.text}")
+            LOGGER.info(f"\033[92m{usuario.name}\033[0m (BROADCASTER): {payload.text}")
         elif usuario.name in self.bot.userbots:
             LOGGER.info(f"\033[93m{usuario.name}\033[0m (BOT): {payload.text}")
         else:
-            user_color = utils.get_user_color(usuario.name, self.bot.user_colors)
             follow = await usuario.follow_info()
-
-            if follow is None:
-                follow_status = "Visita"
-                self.bot.user_followers[usuario.name] = follow_status
-            else:
-                follow_status = f"{follow.followed_at.strftime('%d-%m-%Y')}"
-                self.bot.user_followers[usuario.name] = follow_status
             
-            roles = utils.rol_user(usuario)
-            LOGGER.info(f"{roles}{user_color}{usuario.name}\033[0m ({follow_status}): {payload.text}")
+            #? Verificamos si el usuario existe en la lista
+            if usuario.name in self.bot.user_data_twitch:
+                estado_seguimiento = self.bot.user_data_twitch[usuario.name]["follow_date"]
+                # Si el usuario no tiene fecha de seguimiento, lo asignamos como None
+                if estado_seguimiento == "Visita" or estado_seguimiento == "New" or estado_seguimiento == "Renegado":
+                    estado_seguimiento_review = None # Para no cambiar el estado de seguimiento de la variable
+                
+                if follow is None:
+                    if estado_seguimiento_review is not None:
+                        follow_status = "Renegado"
+                        self.bot.user_data_twitch[usuario.name]["follow_date"] = follow_status
+                    else:
+                        follow_status = estado_seguimiento
+                else:
+                    if estado_seguimiento_review is None:
+                        follow_status = f"{follow.followed_at.strftime('%d-%m-%Y')}"
+                        self.bot.user_data_twitch[usuario.name]["follow_date"] = follow_status
+                    else:
+                        follow_status = estado_seguimiento
+            else:
+                # Si el usuario no existe, lo agregamos a la lista de seguidores
+                follow_status = "Visita"
+                self.bot.user_data_twitch[usuario.name] = {
+                    "follow_date": follow_status,
+                    "color": utils.assign_random_color(),
+                    "nickname": ""
+                }
 
+            user_color = self.bot.user_data_twitch[usuario.name]["color"]
+            nickuser = self.bot.user_data_twitch[usuario.name]["nickname"]
+            formatted_nick = f"[{nickuser}] " if nickuser else ""
+            roles = utils.rol_user(usuario)
+            LOGGER.info(f"{roles}{user_color}{usuario.name}\033[0m {formatted_nick}({follow_status}): {payload.text}")
 
     @commands.Component.listener()
     async def event_follow(self, payload: twitchio.ChannelFollow) -> None:
         # Evento enviado cuando alguien sigue al canal...
         usuario = payload.user.name
         fecha_creacion = payload.followed_at.strftime('%d-%m-%Y')
-        self.bot.user_followers[usuario] = fecha_creacion
+        
+        if usuario in self.bot.user_data_twitch:
+            # Si el usuario ya existe, actualizamos la fecha de seguimiento
+            self.bot.user_data_twitch[usuario]["follow_date"] = fecha_creacion
+        else:
+            # Si el usuario no existe, lo agregamos a la lista
+            self.bot.user_data_twitch[usuario] = {
+                "follow_date": fecha_creacion,
+                "color": utils.assign_random_color(),
+                "nickname": ""
+            }
+        
         LOGGER.info(f"\033[1m\033[30m{usuario}\033[0m\033[1m ha seguido al canal!\033[0m")
-    
     
     @commands.Component.listener()
     async def event_custom_redemption_add(self, payload: twitchio.ChannelPointsRedemptionAdd) -> None:
-        user_color = utils.get_user_color(payload.user.name, self.bot.user_colors)
+        if payload.user.name not in self.bot.user_data_twitch:
+            # Si el usuario no existe, lo agregamos a la lista
+            self.bot.user_data_twitch[payload.user.name] = {
+                "follow_date": "Visita",
+                "color": utils.assign_random_color(),
+                "nickname": ""
+            }
+        
+        user_color = self.bot.user_data_twitch[payload.user.name]["color"]
+        nickuser = self.bot.user_data_twitch[payload.user.name]["nickname"]
+        formatted_nick = f" [{nickuser}]" if nickuser else ""
         # Evento enviado cuando alguien canjea un punto de canal...
-        LOGGER.info(f"{user_color}\033[1m{payload.user.name}\033[0m\033[1m ha canjeado \033[1m\033[30m{payload.reward.title}\033[0m\033[1m | \033[1m\033[30m{payload.reward.cost}\033[0m\033[1m Puntos\033[0m")
-
+        LOGGER.info(f"{user_color}\033[1m{payload.user.name}\033[0m{formatted_nick}\033[1m ha canjeado \033[1m\033[30m{payload.reward.title}\033[0m\033[1m | \033[1m\033[30m{payload.reward.cost}\033[0m\033[1m Puntos\033[0m")
 
     @commands.Component.listener()
     async def event_raid(self, payload: twitchio.ChannelRaid) -> None:

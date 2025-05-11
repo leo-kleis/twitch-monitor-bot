@@ -16,11 +16,8 @@ file_path_userbots_twitch = os.path.join(os.path.dirname(__file__), 'recurso/twi
 with open(file_path_userbots_twitch, 'r') as file:
     userbots = [line.strip() for line in file]
 
-file_path_user_followers_twitch = os.path.join(os.path.dirname(__file__), 'recurso/twitch_zk/data', 'user_followers.json')
-user_followers = utils.load_user_followers(file_path_user_followers_twitch)
-
-file_path_user_colors_twitch = os.path.join(os.path.dirname(__file__), 'recurso/twitch_zk/data', 'user_colors.json')
-user_colors_twitch = utils.load_user_colors(file_path_user_colors_twitch)
+file_path_user_data_twitch = os.path.join(os.path.dirname(__file__), 'recurso/twitch_zk/data', 'user_data_twitch.json')
+user_data_twitch = utils.load_user_data_twitch(file_path_user_data_twitch)
 
 def main() -> None:
     twitchio.utils.setup_logging(level=logging.WARNING)  # Nivel de registro global
@@ -39,14 +36,21 @@ def main() -> None:
             bot = Bot(
                 token_database=tdb,
                 userbots=userbots,
-                user_colors=user_colors_twitch,
-                user_followers=user_followers
+                user_data_twitch=user_data_twitch
             )
             
             # Inicializar el bot y el websocket
             await bot.setup_database()
+            
             # Inicializar el cliente websocket
-            ws_client = WebSocketClient(oauth_token, bot_name, broadcaster_name, userbots, user_colors_twitch, user_followers)
+            ws_client = WebSocketClient(
+                oauth_token,
+                bot_name,
+                broadcaster_name,
+                userbots,
+                user_data_twitch
+            )
+            
             # Iniciar conexión websocket
             connection_success = await ws_client.connect()
             if connection_success:
@@ -65,8 +69,6 @@ def main() -> None:
         LOGGER.warning("Apagando debido a KeyboardInterrupt...")
         save_active_chat_history()
     finally:
-        utils.save_user_followers(file_path_user_followers_twitch, user_followers)
-        utils.save_user_colors(file_path_user_colors_twitch, user_colors_twitch)
-
+        utils.save_user_data_twitch(file_path_user_data_twitch, user_data_twitch)
 if __name__ == "__main__":
     main()

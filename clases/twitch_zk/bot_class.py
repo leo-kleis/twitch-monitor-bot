@@ -17,7 +17,7 @@ BOT_ID = os.getenv("BOT_ID")
 BROADCASTER_ID = os.getenv("BROADCASTER_ID")
 
 class Bot(commands.Bot):
-    def __init__(self, *, token_database, userbots, user_colors, user_followers) -> None:
+    def __init__(self, *, token_database, userbots, user_data_twitch) -> None:
         self.token_manager = Toker(token_database)
         super().__init__(
             client_id=CLIENT_ID_APP,
@@ -27,8 +27,7 @@ class Bot(commands.Bot):
             prefix="?",
         )
         self.userbots = userbots
-        self.user_colors = user_colors
-        self.user_followers = user_followers
+        self.user_data_twitch = user_data_twitch
 
     async def setup_hook(self) -> None:
         # Importación local para evitar referencias circulares

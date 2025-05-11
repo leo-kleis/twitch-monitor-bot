@@ -145,8 +145,6 @@ class Gemi:
         filename = f"chat_{now.strftime('%Y%m%d_%H%M%S')}.json"
         filepath = os.path.join(chat_dir, filename)
         
-        # Resto del código igual...
-        
         # Preparar el historial para guardar
         history_data = {
             "timestamp": now.isoformat(),

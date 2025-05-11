@@ -4,32 +4,24 @@ import random
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-def get_user_color(username, user_colors):
-    if username not in user_colors:
-        excluded_colors = [0, 1, 3, 5, 7]  # Números a excluir
-        available_colors = [i for i in range(1, 8) if i not in excluded_colors]
-        user_colors[username] = f'\033[9{random.choice(available_colors)}m'
-    return user_colors[username]
-
-def save_user_colors(file_path, data):
-    with open(file_path, 'w') as file:
-        json.dump(data, file)
-
-def load_user_colors(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
+def load_user_data_twitch(file_path):
+    """Carga los datos de usuarios desde un archivo JSON."""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
             return json.load(file)
-    return {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    
+def save_user_data_twitch(file_path, user_data_twitch):
+    """Guarda los datos de usuarios en un archivo JSON con formato legible."""
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(user_data_twitch, file, ensure_ascii=False, indent=2)
 
-def save_user_followers(file_path, data):
-    with open(file_path, 'w') as file:
-        json.dump(data, file)
-
-def load_user_followers(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
-            return json.load(file)
-    return {}
+def assign_random_color():
+    """Asigna un color aleatorio en formato ANSI."""
+    excluded_colors = [0, 1, 3, 5, 7]  # Números a excluir
+    available_colors = [i for i in range(1, 8) if i not in excluded_colors]
+    return f'\033[9{random.choice(available_colors)}m'
 
 def rol_user(user) -> str:
     roles_map = {

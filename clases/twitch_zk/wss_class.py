@@ -7,7 +7,7 @@ LOGGER = logging.getLogger("WSC")
 LOGGER.setLevel(logging.INFO)
 
 class WebSocketClient:
-    def __init__(self, oauth_token, username, channel, userbots, user_colors, user_followers):
+    def __init__(self, oauth_token, username, channel, userbots, user_data_twitch):
         self.oauth_token = oauth_token
         self.username = username
         self.channel = channel
@@ -16,8 +16,7 @@ class WebSocketClient:
         self.joined_users = set()  # Almacena usuarios conectados
         self.running = False
         self.userbots = userbots
-        self.user_colors = user_colors
-        self.user_followers = user_followers
+        self.user_data_twitch= user_data_twitch
 
     async def connect(self):
         """Conectar al websocket de Twitch IRC"""
@@ -126,14 +125,19 @@ class WebSocketClient:
                             user = line.split("!")[0][1:]  # Extrae el usuario
                             if user not in self.userbots:
                                 self.joined_users.add(user)
-                                user_color = utils.get_user_color(user, self.user_colors)
-                                
-                                if user in self.user_followers:
-                                    follow_status = self.user_followers[user]
+                                if user in self.user_data_twitch:
+                                    follow_status = self.user_data_twitch[user]["follow_date"]
                                 else:
                                     follow_status = "New"
-
-                                LOGGER.info(f"{user_color}{user}\033[0m ({follow_status}) \033[32mse unió al canal\033[0m")
+                                    self.user_data_twitch[user] = {
+                                        "follow_date": follow_status,
+                                        "color": utils.assign_random_color(),
+                                        "nickname": ""
+                                    }
+                                user_color = self.user_data_twitch[user]["color"]
+                                nickuser = self.user_data_twitch[user]["nickname"]
+                                formatted_nick = f"[{nickuser}] " if nickuser else ""
+                                LOGGER.info(f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[32mse unió al canal\033[0m")
                         except IndexError:
                             pass
 
@@ -142,14 +146,19 @@ class WebSocketClient:
                             user = line.split("!")[0][1:]
                             if user in self.joined_users:
                                 self.joined_users.remove(user)
-                                user_color = utils.get_user_color(user, self.user_colors)
-
-                                if user in self.user_followers:
-                                    follow_status = self.user_followers[user]
+                                if user in self.user_data_twitch:
+                                    follow_status = self.user_data_twitch[user]["follow_date"]
                                 else:
                                     follow_status = "New"
-
-                                LOGGER.info(f"{user_color}{user}\033[0m ({follow_status}) \033[31msalió del canal\033[0m")
+                                    self.user_data_twitch[user] = {
+                                        "follow_date": follow_status,
+                                        "color": utils.assign_random_color(),
+                                        "nickname": ""
+                                    }
+                                user_color = self.user_data_twitch[user]["color"]
+                                nickuser = self.user_data_twitch[user]["nickname"]
+                                formatted_nick = f"[{nickuser}] " if nickuser else ""
+                                LOGGER.info(f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[31msalió del canal\033[0m")
                         except IndexError:
                             pass
         except websockets.exceptions.ConnectionClosed:
