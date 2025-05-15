@@ -125,11 +125,23 @@ class WebSocketClient:
                             user = line.split("!")[0][1:]  # Extrae el usuario
                             if user not in self.userbots:
                                 self.joined_users.add(user)
+                                user_id = utils.buscar_id_usuario(user)
+                                follow_first_time = utils.verificar_follow_fecha(user_id) #? Entrega fecha o None
+                                
                                 if user in self.user_data_twitch:
-                                    follow_status = self.user_data_twitch[user]["follow_date"]
+                                    follow_status = self.user_data_twitch[user]["follow_date"] #? Entrega fecha o Visita o New o Renegado
+                                    
+                                    if follow_first_time == None and follow_status != "Visita" and follow_status != "New" and follow_status != "Renegado":
+                                        follow_status = "Renegado"
+                                        self.user_data_twitch[user]["follow_date"] = follow_status
                                 else:
-                                    follow_status = "New"
+                                    if follow_first_time != None:
+                                        follow_status = follow_first_time
+                                    else:
+                                        follow_status = "New"
+                                        
                                     self.user_data_twitch[user] = {
+                                        "id": user_id,
                                         "follow_date": follow_status,
                                         "color": utils.assign_random_color(),
                                         "nickname": ""
@@ -146,15 +158,19 @@ class WebSocketClient:
                             user = line.split("!")[0][1:]
                             if user in self.joined_users:
                                 self.joined_users.remove(user)
-                                if user in self.user_data_twitch:
-                                    follow_status = self.user_data_twitch[user]["follow_date"]
+                                user_id = self.user_data_twitch[user]["id"]
+                                
+                                if user_id != None and user_id != "":
+                                    follow_last_time = utils.verificar_follow_fecha(user_id) #? Entrega fecha o None
+                                    follow_status = self.user_data_twitch[user]["follow_date"] #? Entrega fecha o Visita o New o Renegado
+                                    
+                                    if follow_last_time == None and follow_status != "Visita" and follow_status != "New" and follow_status != "Renegado":
+                                        follow_status = "Renegado"
+                                        self.user_data_twitch[user]["follow_date"] = follow_status
                                 else:
-                                    follow_status = "New"
-                                    self.user_data_twitch[user] = {
-                                        "follow_date": follow_status,
-                                        "color": utils.assign_random_color(),
-                                        "nickname": ""
-                                    }
+                                    print(f"ID de usuario no encontrado para {user}")
+                                    follow_status = self.user_data_twitch[user]["follow_date"]
+                                    
                                 user_color = self.user_data_twitch[user]["color"]
                                 nickuser = self.user_data_twitch[user]["nickname"]
                                 formatted_nick = f"[{nickuser}] " if nickuser else ""

@@ -40,33 +40,32 @@ class MyComponent(commands.Component):
         else:
             follow = await usuario.follow_info()
             
-            #? Verificamos si el usuario existe en la lista
-            if usuario.name in self.bot.user_data_twitch:
-                estado_seguimiento = self.bot.user_data_twitch[usuario.name]["follow_date"]
-                # Si el usuario no tiene fecha de seguimiento, lo asignamos como None
-                if estado_seguimiento == "Visita" or estado_seguimiento == "New" or estado_seguimiento == "Renegado":
-                    estado_seguimiento_review = None # Para no cambiar el estado de seguimiento de la variable
-                
-                if follow is None:
-                    if estado_seguimiento_review is not None:
+            if follow is None:
+                if usuario.name in self.bot.user_data_twitch:
+                    estado_seguimiento = self.bot.user_data_twitch[usuario.name]["follow_date"]
+                    
+                    if estado_seguimiento != "Visita" and estado_seguimiento != "New" and estado_seguimiento != "Renegado":
                         follow_status = "Renegado"
                         self.bot.user_data_twitch[usuario.name]["follow_date"] = follow_status
                     else:
                         follow_status = estado_seguimiento
                 else:
-                    if estado_seguimiento_review is None:
-                        follow_status = f"{follow.followed_at.strftime('%d-%m-%Y')}"
-                        self.bot.user_data_twitch[usuario.name]["follow_date"] = follow_status
-                    else:
-                        follow_status = estado_seguimiento
-            else:
-                # Si el usuario no existe, lo agregamos a la lista de seguidores
-                follow_status = "Visita"
-                self.bot.user_data_twitch[usuario.name] = {
-                    "follow_date": follow_status,
-                    "color": utils.assign_random_color(),
-                    "nickname": ""
-                }
+                    follow_status = "Visita"
+                    self.bot.user_data_twitch[usuario.name] = {
+                        "id": usuario.id,
+                        "follow_date": follow_status,
+                        "color": utils.assign_random_color(),
+                        "nickname": ""
+                    }
+            else: #? Es seguidor
+                follow_status = f"{follow.followed_at.strftime('%d-%m-%Y')}"
+                if usuario.name != self.bot.user_data_twitch:
+                    self.bot.user_data_twitch[usuario.name] = {
+                        "id": usuario.id,
+                        "follow_date": follow_status,
+                        "color": utils.assign_random_color(),
+                        "nickname": ""
+                    }
 
             user_color = self.bot.user_data_twitch[usuario.name]["color"]
             nickuser = self.bot.user_data_twitch[usuario.name]["nickname"]
@@ -86,6 +85,7 @@ class MyComponent(commands.Component):
         else:
             # Si el usuario no existe, lo agregamos a la lista
             self.bot.user_data_twitch[usuario] = {
+                "id": payload.user.id,
                 "follow_date": fecha_creacion,
                 "color": utils.assign_random_color(),
                 "nickname": ""
@@ -98,6 +98,7 @@ class MyComponent(commands.Component):
         if payload.user.name not in self.bot.user_data_twitch:
             # Si el usuario no existe, lo agregamos a la lista
             self.bot.user_data_twitch[payload.user.name] = {
+                "id": payload.user.id,
                 "follow_date": "Visita",
                 "color": utils.assign_random_color(),
                 "nickname": ""

@@ -1,6 +1,7 @@
 # Ignorar carpetas data específicas
 recurso/twitch_zk/data
 recurso/twitch_zk/chat_gemi
+recurso/twitch_zk/follow/follow
 bd/data
 pruebas
 

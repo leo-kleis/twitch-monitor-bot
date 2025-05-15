@@ -1,7 +1,9 @@
 import os
 import json
 import random
+import requests
 import google.generativeai as genai
+from datetime import datetime
 from dotenv import load_dotenv
 
 def load_user_data_twitch(file_path):
@@ -22,6 +24,46 @@ def assign_random_color():
     excluded_colors = [0, 1, 3, 5, 7]  # Números a excluir
     available_colors = [i for i in range(1, 8) if i not in excluded_colors]
     return f'\033[9{random.choice(available_colors)}m'
+
+def buscar_id_usuario(user):
+    headers = {
+        'Client-ID': os.getenv("TTG_BOT_CLIENT_ID"),
+        'Authorization': f'Bearer {os.getenv("TTG_BOT_TOKEN")}'
+    }
+    url = f"https://api.twitch.tv/helix/users?login={user}"
+    
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        if data['data']:
+            return data['data'][0]['id']
+        else:
+            print(f"Usuario no encontrado: {user}")
+            return None
+    else:
+        print(f"Error al obtener usuario {user}: {response.status_code} - {response.text}")
+        return None
+
+def verificar_follow_fecha(user_id):
+    broadcaster_id = os.getenv("BROADCASTER_ID")
+    headers = {
+        'Client-ID': os.getenv("TTG_BOT_CLIENT_ID"),
+        'Authorization': f'Bearer {os.getenv("TTG_BOT_TOKEN")}'
+    }
+    url = f"https://api.twitch.tv/helix/channels/followers?broadcaster_id={broadcaster_id}&user_id={user_id}"
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        if data['data']:
+            follow_date_iso = data['data'][0]['followed_at']
+            
+            follow_date = datetime.strptime(follow_date_iso, '%Y-%m-%dT%H:%M:%SZ').strftime('%d-%m-%Y')
+            return follow_date
+        else:
+            return None
+    else:
+        print(f"Error al obtener usuario {user_id}: {response.status_code} - {response.text}")
+        return None
 
 def rol_user(user) -> str:
     roles_map = {
