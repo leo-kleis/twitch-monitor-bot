@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Replace these with your actual client ID and client secret
-CLIENT_ID_APP: str = os.getenv("CLIENT_ID_APP")
-CLIENT_SECRET_APP: str = os.getenv("CLIENT_SECRET_APP")
+CLIENT_ID_APP: str = os.getenv("CLIENT_ID_APP")# type: ignore
+CLIENT_SECRET_APP: str = os.getenv("CLIENT_SECRET_APP")# type: ignore
 REDIRECT_URI = 'http://localhost'
 
 # Twitch OAuth2 endpoints

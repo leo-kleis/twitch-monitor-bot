@@ -2,7 +2,9 @@ import os
 import json
 import random
 import requests
-import google.generativeai as genai
+from google.generativeai.client import configure
+from google.generativeai.types.generation_types import GenerationConfig
+from google.generativeai.generative_models import GenerativeModel
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -84,7 +86,7 @@ def rol_user(user) -> str:
     
     return f"[{' | '.join(active_roles)}] "
 
-def name_game(game: str) -> str:
+def name_game(game: str) -> str | None:
     game = game.lower()
     game_map = {
         'dota 2' : "29595",
@@ -106,13 +108,12 @@ def get_games() -> list:
 async def iniciar_gemi(self, ctx):
     load_dotenv()
     GEMINI_API = os.getenv("IA_API")
-    genai.configure(api_key=GEMINI_API)
-
-    generation_config = {
-        "temperature": 0.7,
-        "top_p": 0.8,
-        "top_k": 40
-    }
+    configure(api_key=GEMINI_API)
+    generation_config = GenerationConfig(
+        temperature=0.7,
+        top_p=0.8,
+        top_k=40
+    )
 
     safety_settings = {
         "HARASSMENT": "BLOCK_MEDIUM_AND_ABOVE",
@@ -183,7 +184,7 @@ async def iniciar_gemi(self, ctx):
     Tus respuestas no pueden contener salto de lineas, y si quieres agregar un emoji, usa el formato de Twitch para emotes.
     """
 
-    model = genai.GenerativeModel(
+    model = GenerativeModel(
         model_name='models/gemini-2.0-flash-lite',
         generation_config=generation_config,
         safety_settings=safety_settings,

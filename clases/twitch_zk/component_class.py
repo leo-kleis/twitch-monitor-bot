@@ -59,7 +59,7 @@ class MyComponent(commands.Component):
                     }
             else: #? Es seguidor
                 follow_status = f"{follow.followed_at.strftime('%d-%m-%Y')}"
-                if usuario.name != self.bot.user_data_twitch:
+                if usuario.name not in self.bot.user_data_twitch:
                     self.bot.user_data_twitch[usuario.name] = {
                         "id": usuario.id,
                         "follow_date": follow_status,
@@ -119,9 +119,9 @@ class MyComponent(commands.Component):
     @commands.Component.listener()
     async def event_mod_action(self, payload: twitchio.ChannelModerate) -> None:
         # Evento enviado cuando alguien modera el canal...
-        if payload.action == "delete":
+        if payload.action == "delete" and payload.delete is not None:
             LOGGER.info(f"\033[1m\033[30m{payload.moderator}\033[0m\033[1m ha eliminado el mensaje \033[1m\033[31m\"{payload.delete.text}\"\033[0m\033[1m de \033[1m\033[30m{payload.delete.user}\033[0m")
-        elif payload.action == "raid":
+        elif payload.action == "raid" and payload.raid is not None:
             LOGGER.info(f"\033[1m\033[30m{payload.moderator}\033[0m\033[1m ha hecho un raid con {payload.raid.viewer_count} viewers\033[0m")
         
         
@@ -131,7 +131,7 @@ class MyComponent(commands.Component):
         LOGGER.info(f"\033[1m{payload.title} - {payload.category_name}\033[0m")
 
     @commands.command(aliases=["commands"])
-    async def help(self, ctx: commands.Context, add: str = None) -> None:
+    async def help(self, ctx: commands.Context, add: str | None = None) -> None:
         """Comando que envía la lista de comandos disponibles.
     
         !help, !commands
@@ -291,7 +291,7 @@ class MyComponent(commands.Component):
             await ctx.reply("Error: El límite de mensajes debe ser al menos 5.")
             return
         
-        model = await utils.iniciar_gemi(self, ctx)
+        model = utils.iniciar_gemi(self, ctx)
         
         charla = Gemi(model, max_messages=maximo, bot=self.bot)
         await ctx.reply(f"Gemi ON con límite de {maximo} mensajes.")
@@ -304,7 +304,8 @@ class MyComponent(commands.Component):
         !deactivate, !desactivar
         """
         global charla
-        charla.terminate(False)
+        if charla is not None:
+            charla.terminate(False)
         charla = None
         await ctx.reply("Gemi OFF.")
     

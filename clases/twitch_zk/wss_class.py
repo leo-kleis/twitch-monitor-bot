@@ -67,21 +67,21 @@ class WebSocketClient:
                 message = await self.websocket.recv()
     
                 # Manejo de PING/PONG
-                if message.startswith("PING"):
-                    await self.websocket.send(f"PONG {message.split()[1]}")
+                if str(message).startswith("PING"):
+                    await self.websocket.send(f"PONG {str(message).split()[1]}")
                     continue
     
                 # Manejo de CLEARCHAT (ban, timeout, clear)
-                if "CLEARCHAT" in message:
-                    if "#" + self.channel in message:
-                        tags_dict = self._parse_tags(message)
+                if "CLEARCHAT" in str(message):
+                    if "#" + self.channel in str(message):
+                        tags_dict = self._parse_tags(str(message))
                         
                         # Determinar si es para un usuario específico o limpieza general
-                        is_user_targeted = ":" in message.split("#" + self.channel + " :")
+                        is_user_targeted = ":" in str(message).split("#" + self.channel + " :")
                         
                         if is_user_targeted:
                             # Ban o timeout a un usuario específico
-                            user = message.split("#" + self.channel + " :")[1].strip()
+                            user = str(message).split("#" + self.channel + " :")[1].strip()
                             
                             # Extraer información de moderación
                             ban_duration = tags_dict.get("ban-duration", None)
@@ -102,9 +102,9 @@ class WebSocketClient:
                             LOGGER.info(f"\033[1m\033[43m\033[30m Chat limpiado completamente \033[0m")
                 
                 # Manejo de CLEARMSG (eliminación de mensaje individual)
-                elif "CLEARMSG" in message:
-                    if "#" + self.channel in message:
-                        tags_dict = self._parse_tags(message)
+                elif "CLEARMSG" in str(message):
+                    if "#" + self.channel in str(message):
+                        tags_dict = self._parse_tags(str(message))
                         
                         # Extraer información del mensaje eliminado
                         login = tags_dict.get("login", "desconocido")
@@ -112,14 +112,14 @@ class WebSocketClient:
                         
                         # Extraer el contenido del mensaje eliminado si está disponible
                         msg_content = ""
-                        if ":" in message.split("#" + self.channel + " :"):
-                            msg_content = message.split("#" + self.channel + " :")[1].strip()
+                        if ":" in str(message).split("#" + self.channel + " :"):
+                            msg_content = str(message).split("#" + self.channel + " :")[1].strip()
                             msg_content = f" - Mensaje: '{msg_content}'"
                         
                         LOGGER.info(f"\033[1m\033[43m\033[30m Mensaje de {login} eliminado{msg_content} \033[0m")
                     
                 # Manejo de múltiples eventos JOIN/PART
-                for line in message.split("\r\n"):
+                for line in str(message).split("\r\n"):
                     if "JOIN" in line:
                         try:
                             user = line.split("!")[0][1:]  # Extrae el usuario

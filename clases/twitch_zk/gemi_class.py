@@ -62,7 +62,7 @@ class Gemi:
                                 if not function_called:
                                     response_text = part.text
                                 elif function_called and part.text != "":
-                                    response_text = response_text + " | " + part.text
+                                    response_text = str(response_text) + " | " + part.text
         except Exception as e:
             LOGGER.info(f"Error al procesar respuesta: {str(e)}")
             response_text = "Lo siento, ocurrió un error al procesar tu mensaje."
@@ -78,7 +78,8 @@ class Gemi:
         limite = maximo - 3
         if self.message_count >= limite and self.message_count < maximo:
             aviso = maximo - self.message_count
-            asyncio.create_task(ctx.send(f"Solo quedan {aviso} mensajes para que Gemi se desactive."))
+            if ctx is not None:
+                asyncio.create_task(ctx.send(f"Solo quedan {aviso} mensajes para que Gemi se desactive."))
         
         # Verificar si llegamos al límite después de esta respuesta
         if self.message_count >= self.max_messages:

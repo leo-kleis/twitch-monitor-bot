@@ -20,11 +20,10 @@ class Bot(commands.Bot):
     def __init__(self, *, token_database, userbots, user_data_twitch) -> None:
         self.token_manager = Toker(token_database)
         super().__init__(
-            client_id=CLIENT_ID_APP,
-            client_secret=CLIENT_SECRET_APP,
-            bot_id=BOT_ID,
-            BROADCASTER_ID=BROADCASTER_ID,
-            prefix="?",
+            client_id=str(CLIENT_ID_APP),
+            client_secret=str(CLIENT_SECRET_APP),
+            bot_id=str(BOT_ID),
+            prefix="?"
         )
         self.userbots = userbots
         self.user_data_twitch = user_data_twitch
@@ -85,7 +84,7 @@ class Bot(commands.Bot):
         same_count_counter = 0
         while True:
             try:
-                stream = await self.fetch_streams(user_ids=[BROADCASTER_ID])
+                stream = await self.fetch_streams(user_ids=[str(BROADCASTER_ID)])
                 if stream == []:
                     LOGGER.info("\033[1m\033[41mStream offline\033[0m")
                 else:
@@ -105,10 +104,10 @@ class Bot(commands.Bot):
     
     async def event_ready(self) -> None:
         LOGGER.info(f"\033[1m\033[42m\033[30m   BOT Conectado exitosamente   \033[0m")
-        channel_info = await self.fetch_channels([BROADCASTER_ID])
+        channel_info = await self.fetch_channels([str(BROADCASTER_ID)])
         LOGGER.info(f"\033[32m{channel_info[0].title}\033[0m | \033[32m{channel_info[0].game_name}\033[0m")
         
         asyncio.create_task(self.get_viewer_count())
         
-    async def event_command_error(context: commands.Context, error: Exception):
+    async def event_command_error(self, context: commands.Context, error: Exception):
         return
