@@ -2,41 +2,40 @@ import os
 import logging
 import twitchio # v3.0.0b3
 import recurso.twitch_zk.utils as utils
-from clases.twitch_zk.gemi_class import Gemi
+import recurso.gui.utils_gui as utils_gui
+from clases.twitch_zk import Gemi
 from twitchio.ext import commands
 from dotenv import load_dotenv
-
-LOGGER: logging.Logger = logging.getLogger("COMPONENT")
-LOGGER.setLevel(logging.INFO)
 
 load_dotenv()
 BROADCASTER_NAME = os.getenv("BROADCASTER")
 BOT_NAME = os.getenv("BOT")
 charla = None
 
-# Al final del archivo
 def save_active_chat_history():
     """Guarda el historial del chat activo si existe y tiene mensajes"""
     global charla
     if charla is not None and hasattr(charla, 'get_message_count'):
         if charla.get_message_count() > 0:
-            LOGGER.info("Guardando historial de chat activo...")
+            print("Guardando historial de chat activo...")
             charla.terminate(False)
     return
 
 class MyComponent(commands.Component):
     def __init__(self, bot) -> None:
         self.bot = bot
+        self.LOGGER = logging.getLogger("COMPONENT")
+        self.LOGGER.setLevel(logging.INFO)
 
     @commands.Component.listener()
     async def event_message(self, payload: twitchio.ChatMessage) -> None:
         usuario = payload.chatter
         if usuario.name == BOT_NAME:
-            LOGGER.info(f"\033[95m{usuario.name}\033[0m (BOTME): {payload.text}")
+            utils_gui.log_and_callback(self.bot, f"\033[95m{usuario.name}\033[0m (BOTME): {payload.text}", self.bot.msg_type)
         elif usuario.name == BROADCASTER_NAME:
-            LOGGER.info(f"\033[92m{usuario.name}\033[0m (BROADCASTER): {payload.text}")
+            utils_gui.log_and_callback(self.bot, f"\033[92m{usuario.name}\033[0m (BROADCASTER): {payload.text}", self.bot.msg_type)
         elif usuario.name in self.bot.userbots:
-            LOGGER.info(f"\033[93m{usuario.name}\033[0m (BOT): {payload.text}")
+            utils_gui.log_and_callback(self.bot, f"\033[93m{usuario.name}\033[0m (BOT): {payload.text}", self.bot.msg_type)
         else:
             follow = await usuario.follow_info()
             
@@ -71,7 +70,7 @@ class MyComponent(commands.Component):
             nickuser = self.bot.user_data_twitch[usuario.name]["nickname"]
             formatted_nick = f"[{nickuser}] " if nickuser else ""
             roles = utils.rol_user(usuario)
-            LOGGER.info(f"{roles}{user_color}{usuario.name}\033[0m {formatted_nick}({follow_status}): {payload.text}")
+            utils_gui.log_and_callback(self.bot, f"{roles}{user_color}{usuario.name}\033[0m {formatted_nick}({follow_status}): {payload.text}", self.bot.msg_type)
 
     @commands.Component.listener()
     async def event_follow(self, payload: twitchio.ChannelFollow) -> None:
@@ -90,9 +89,9 @@ class MyComponent(commands.Component):
                 "color": utils.assign_random_color(),
                 "nickname": ""
             }
-        
-        LOGGER.info(f"\033[1m\033[30m{usuario}\033[0m\033[1m ha seguido al canal!\033[0m")
-    
+
+        utils_gui.log_and_callback(self.bot, f"\033[1m\033[30m{usuario}\033[0m\033[1m ha seguido al canal!\033[0m", self.bot.msg_type)
+
     @commands.Component.listener()
     async def event_custom_redemption_add(self, payload: twitchio.ChannelPointsRedemptionAdd) -> None:
         if payload.user.name not in self.bot.user_data_twitch:
@@ -108,27 +107,27 @@ class MyComponent(commands.Component):
         nickuser = self.bot.user_data_twitch[payload.user.name]["nickname"]
         formatted_nick = f" [{nickuser}]" if nickuser else ""
         # Evento enviado cuando alguien canjea un punto de canal...
-        LOGGER.info(f"{user_color}\033[1m{payload.user.name}\033[0m{formatted_nick}\033[1m ha canjeado \033[1m\033[30m{payload.reward.title}\033[0m\033[1m | \033[1m\033[30m{payload.reward.cost}\033[0m\033[1m Puntos\033[0m")
+        utils_gui.log_and_callback(self.bot, f"{user_color}\033[1m{payload.user.name}\033[0m{formatted_nick}\033[1m ha canjeado \033[1m\033[30m{payload.reward.title}\033[0m\033[1m | \033[1m\033[30m{payload.reward.cost}\033[0m\033[1m Puntos\033[0m", self.bot.msg_type)
 
     @commands.Component.listener()
     async def event_raid(self, payload: twitchio.ChannelRaid) -> None:
         # Evento enviado cuando alguien canjea un punto de canal...
-        LOGGER.info(f"\033[1m\033[30m{payload.from_broadcaster}\033[0m\033[1m ha hecho un raid con {payload.viewer_count} viewers\033[0m")
+        utils_gui.log_and_callback(self.bot, f"\033[1m\033[30m{payload.from_broadcaster}\033[0m\033[1m ha hecho un raid con {payload.viewer_count} viewers\033[0m", self.bot.msg_type)
     
     
     @commands.Component.listener()
     async def event_mod_action(self, payload: twitchio.ChannelModerate) -> None:
         # Evento enviado cuando alguien modera el canal...
         if payload.action == "delete" and payload.delete is not None:
-            LOGGER.info(f"\033[1m\033[30m{payload.moderator}\033[0m\033[1m ha eliminado el mensaje \033[1m\033[31m\"{payload.delete.text}\"\033[0m\033[1m de \033[1m\033[30m{payload.delete.user}\033[0m")
+            utils_gui.log_and_callback(self.bot, f"\033[1m\033[30m{payload.moderator}\033[0m\033[1m ha eliminado el mensaje \033[1m\033[31m\"{payload.delete.text}\"\033[0m\033[1m de \033[1m\033[30m{payload.delete.user}\033[0m", self.bot.msg_type)
         elif payload.action == "raid" and payload.raid is not None:
-            LOGGER.info(f"\033[1m\033[30m{payload.moderator}\033[0m\033[1m ha hecho un raid con {payload.raid.viewer_count} viewers\033[0m")
+            utils_gui.log_and_callback(self.bot, f"\033[1m\033[30m{payload.moderator}\033[0m\033[1m ha hecho un raid con {payload.raid.viewer_count} viewers\033[0m", self.bot.msg_type)
         
         
     @commands.Component.listener()
     async def event_channel_update(self, payload: twitchio.ChannelUpdate) -> None:
         # Evento enviado cuando alguien modera el canal...
-        LOGGER.info(f"\033[1m{payload.title} - {payload.category_name}\033[0m")
+        utils_gui.log_and_callback(self.bot, f"\033[1m{payload.title} - {payload.category_name}\033[0m", self.bot.msg_type)
 
     @commands.command(aliases=["commands"])
     async def help(self, ctx: commands.Context, add: str | None = None) -> None:
@@ -164,7 +163,7 @@ class MyComponent(commands.Component):
             
             await ctx.send(f"¡Clip creado! Editar: {edit_url}")
         except Exception as e:
-            LOGGER.error(f"Error al crear clip: {str(e)}")
+            self.LOGGER.error(f"Error al crear clip: {str(e)}")
 
 
     @commands.command(aliases=["ds"])
@@ -275,7 +274,6 @@ class MyComponent(commands.Component):
     async def activate(self, ctx: commands.Context, maximo: int = 20) -> None:
         """Comando solo para el broadcaster, que activa Gemi IA con límite configurable (mínimo 5)."""
         global charla
-        
         # Verificar si ya existe una instancia activa
         if charla is not None:
             if charla.is_active():
@@ -285,14 +283,12 @@ class MyComponent(commands.Component):
                 # Si existe pero no está activa, la terminamos correctamente
                 charla.terminate(False)
                 charla = None
-        
         # Verificar el valor mínimo
         if maximo < 5:
             await ctx.reply("Error: El límite de mensajes debe ser al menos 5.")
             return
-        
-        model = utils.iniciar_gemi(self, ctx)
-        
+        canal = await ctx.channel.fetch_channel_info(token_for=self.bot.user)
+        model = await utils.iniciar_gemi(canal)
         charla = Gemi(model, max_messages=maximo, bot=self.bot)
         await ctx.reply(f"Gemi ON con límite de {maximo} mensajes.")
         

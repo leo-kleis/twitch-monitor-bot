@@ -10,6 +10,8 @@ asqlite = "2.0.0"
 requests = "2.32.3"
 websockets = "15.0.1"
 google-generativeai = "*"
+pyqt5 = "*"
+qasync = "*"
 
 [dev-packages]
 

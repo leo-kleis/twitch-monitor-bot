@@ -105,7 +105,7 @@ def get_games() -> list:
              'Teamfight Tactics | TFT']
     return games
 
-async def iniciar_gemi(self, ctx):
+async def iniciar_gemi(canal):
     load_dotenv()
     GEMINI_API = os.getenv("IA_API")
     configure(api_key=GEMINI_API)
@@ -155,7 +155,6 @@ async def iniciar_gemi(self, ctx):
         ]
     }]
     
-    canal = await ctx.channel.fetch_channel_info(token_for=self.bot.user)
     broadcaster = canal.user.name
     titulo = canal.title
     categoria = canal.game_name
@@ -192,4 +191,4 @@ async def iniciar_gemi(self, ctx):
         tools=tools
     )
     
-    return model 
+    return model

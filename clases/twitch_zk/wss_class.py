@@ -1,13 +1,10 @@
 import logging
 import websockets
 import recurso.twitch_zk.utils as utils
-
-# Configuración del logger específico para WebSocketClient
-LOGGER = logging.getLogger("WSC")
-LOGGER.setLevel(logging.INFO)
+import recurso.gui.utils_gui as utils_gui
 
 class WebSocketClient:
-    def __init__(self, oauth_token, username, channel, userbots, user_data_twitch):
+    def __init__(self, oauth_token, username, channel, userbots, user_data_twitch, msg_type, message_callback=None):
         self.oauth_token = oauth_token
         self.username = username
         self.channel = channel
@@ -16,7 +13,11 @@ class WebSocketClient:
         self.joined_users = set()  # Almacena usuarios conectados
         self.running = False
         self.userbots = userbots
-        self.user_data_twitch= user_data_twitch
+        self.user_data_twitch = user_data_twitch
+        self.message_callback = message_callback
+        self.msg_type = msg_type
+        self.LOGGER = logging.getLogger("WSC")
+        self.LOGGER.setLevel(logging.INFO)
 
     async def connect(self):
         """Conectar al websocket de Twitch IRC"""
@@ -31,11 +32,11 @@ class WebSocketClient:
             await self.websocket.send("CAP REQ :twitch.tv/tags")        # Habilita etiquetas de mensajes           
             await self.websocket.send(f"JOIN #{self.channel}")
             
-            LOGGER.info(f"\033[1m\033[42m\033[30m   WebSocket Conectado          \033[0m")
+            utils_gui.log_and_callback(self, f"\033[1m\033[42m\033[30m   WebSocket Conectado          \033[0m", self.msg_type)
             self.running = True
             return True
         except Exception as e:
-            LOGGER.error(f"Error al conectar: {e}")
+            self.LOGGER.error(f"Error al conectar: {e}")
             return False
 
     def _parse_tags(self, message):
@@ -53,13 +54,13 @@ class WebSocketClient:
                         key, value = tag.split("=", 1)
                         tags_dict[key] = value
             except Exception as e:
-                LOGGER.error(f"Error al parsear etiquetas: {e}")
+                self.LOGGER.error(f"Error al parsear etiquetas: {e}")
         return tags_dict
 
     async def listen(self):
         """Escuchar mensajes del websocket"""
         if not self.websocket:
-            LOGGER.error("No hay conexión websocket establecida")
+            self.LOGGER.error("No hay conexión websocket establecida")
             return
     
         try:
@@ -96,11 +97,11 @@ class WebSocketClient:
                                 if ban_reason:
                                     action_type += f" - Razón: {ban_reason}"
                                     
-                            LOGGER.info(f"\033[1m\033[43m\033[30m Usuario {user} recibió {action_type} \033[0m")
+                            utils_gui.log_and_callback(self, f"\033[1m\033[43m\033[30m Usuario {user} recibió {action_type} \033[0m", self.msg_type)
                         else:
                             # Limpieza completa del chat (/clear)
-                            LOGGER.info(f"\033[1m\033[43m\033[30m Chat limpiado completamente \033[0m")
-                
+                            utils_gui.log_and_callback(self, f"\033[1m\033[43m\033[30m Chat limpiado completamente \033[0m", self.msg_type)
+
                 # Manejo de CLEARMSG (eliminación de mensaje individual)
                 elif "CLEARMSG" in str(message):
                     if "#" + self.channel in str(message):
@@ -115,9 +116,9 @@ class WebSocketClient:
                         if ":" in str(message).split("#" + self.channel + " :"):
                             msg_content = str(message).split("#" + self.channel + " :")[1].strip()
                             msg_content = f" - Mensaje: '{msg_content}'"
-                        
-                        LOGGER.info(f"\033[1m\033[43m\033[30m Mensaje de {login} eliminado{msg_content} \033[0m")
-                    
+
+                        utils_gui.log_and_callback(self, f"\033[1m\033[43m\033[30m Mensaje de {login} eliminado{msg_content} \033[0m", self.msg_type)
+
                 # Manejo de múltiples eventos JOIN/PART
                 for line in str(message).split("\r\n"):
                     if "JOIN" in line:
@@ -149,7 +150,7 @@ class WebSocketClient:
                                 user_color = self.user_data_twitch[user]["color"]
                                 nickuser = self.user_data_twitch[user]["nickname"]
                                 formatted_nick = f"[{nickuser}] " if nickuser else ""
-                                LOGGER.info(f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[32mse unió al canal\033[0m")
+                                utils_gui.log_and_callback(self, f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[32mse unió al canal\033[0m", self.msg_type)
                         except IndexError:
                             pass
 
@@ -174,13 +175,13 @@ class WebSocketClient:
                                 user_color = self.user_data_twitch[user]["color"]
                                 nickuser = self.user_data_twitch[user]["nickname"]
                                 formatted_nick = f"[{nickuser}] " if nickuser else ""
-                                LOGGER.info(f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[31msalió del canal\033[0m")
+                                utils_gui.log_and_callback(self, f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[31msalió del canal\033[0m", self.msg_type)
                         except IndexError:
                             pass
         except websockets.exceptions.ConnectionClosed:
-            LOGGER.warning("Conexión websocket cerrada")
+            self.LOGGER.warning("Conexión websocket cerrada")
         except Exception as e:
-            LOGGER.error(f"Error en el websocket: {e}")
+            self.LOGGER.error(f"Error en el websocket: {e}")
         finally:
             self.running = False
             self.websocket = None
@@ -191,7 +192,7 @@ class WebSocketClient:
         if self.websocket:
             await self.websocket.close()
             self.websocket = None
-            LOGGER.info("Desconectado del websocket")
+            utils_gui.log_and_callback(self, "Desconectado del websocket", self.msg_type)
 
     def get_connected_users(self):
         """Obtener la lista de usuarios conectados"""

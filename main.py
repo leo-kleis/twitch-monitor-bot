@@ -5,9 +5,9 @@ import asqlite
 import twitchio # v3.0.0b3
 import recurso.twitch_zk.utils as utils
 from dotenv import load_dotenv
-from clases.twitch_zk.bot_class import Bot
-from clases.twitch_zk.wss_class import WebSocketClient
-from clases.twitch_zk.component_class import save_active_chat_history
+from clases.twitch_zk import Bot
+from clases.twitch_zk import WebSocketClient
+from clases.twitch_zk import save_active_chat_history
 
 LOGGER: logging.Logger = logging.getLogger("MAIN")
 LOGGER.setLevel(logging.WARNING)
@@ -36,7 +36,9 @@ def main() -> None:
             bot = Bot(
                 token_database=tdb,
                 userbots=userbots,
-                user_data_twitch=user_data_twitch
+                user_data_twitch=user_data_twitch,
+                msg_type=None,
+                message_callback=None
             )
             
             # Inicializar el bot y el websocket
@@ -48,7 +50,9 @@ def main() -> None:
                 bot_name,
                 broadcaster_name,
                 userbots,
-                user_data_twitch
+                user_data_twitch,
+                msg_type=None,
+                message_callback=None
             )
             
             # Iniciar conexión websocket
@@ -66,9 +70,9 @@ def main() -> None:
     try:
         asyncio.run(runner())
     except KeyboardInterrupt:
-        LOGGER.warning("Apagando debido a KeyboardInterrupt...")
-        save_active_chat_history()
+        LOGGER.warning("Apagando debido a KeyboardInterrupt...")    
     finally:
+        save_active_chat_history()
         utils.save_user_data_twitch(file_path_user_data_twitch, user_data_twitch)
 if __name__ == "__main__":
     main()

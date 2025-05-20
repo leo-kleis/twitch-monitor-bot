@@ -2,13 +2,11 @@ import os
 import asyncio
 import logging
 import twitchio
+import recurso.gui.utils_gui as utils_gui
+from bd import Toker
 from twitchio import eventsub
-from bd.db_token import Toker
-from twitchio.ext import commands
 from dotenv import load_dotenv
-
-LOGGER: logging.Logger = logging.getLogger("BOT")
-LOGGER.setLevel(logging.INFO)
+from twitchio.ext import commands
 
 load_dotenv()
 CLIENT_ID_APP = os.getenv("CLIENT_ID_APP")
@@ -17,7 +15,7 @@ BOT_ID = os.getenv("BOT_ID")
 BROADCASTER_ID = os.getenv("BROADCASTER_ID")
 
 class Bot(commands.Bot):
-    def __init__(self, *, token_database, userbots, user_data_twitch) -> None:
+    def __init__(self, *, token_database, userbots, user_data_twitch, msg_type, message_callback=None) -> None:
         self.token_manager = Toker(token_database)
         super().__init__(
             client_id=str(CLIENT_ID_APP),
@@ -27,6 +25,10 @@ class Bot(commands.Bot):
         )
         self.userbots = userbots
         self.user_data_twitch = user_data_twitch
+        self.msg_type = msg_type
+        self.message_callback = message_callback
+        self.LOGGER = logging.getLogger("BOT")
+        self.LOGGER.setLevel(logging.INFO)
 
     async def setup_hook(self) -> None:
         # Importación local para evitar referencias circulares
@@ -86,7 +88,12 @@ class Bot(commands.Bot):
             try:
                 stream = await self.fetch_streams(user_ids=[str(BROADCASTER_ID)])
                 if stream == []:
-                    LOGGER.info("\033[1m\033[41mStream offline\033[0m")
+                    # Modo GUI: actualizar etiqueta y enviar mensaje
+                    if self.message_callback:
+                        self.message_callback("Offline", "viewer_count")
+                    else:
+                        # Sin GUI, solo usar logger
+                        self.LOGGER.info("\033[1m\033[41mStream offline\033[0m")
                 else:
                     viewer_count = stream[0].viewer_count
                     if viewer_count == last_viewer_count:
@@ -95,19 +102,48 @@ class Bot(commands.Bot):
                         same_count_counter = 0
                         last_viewer_count = viewer_count
                     
+                    # Siempre enviar el contador al UI si estamos en modo GUI
+                    if self.message_callback:
+                        self.message_callback(str(viewer_count), "viewer_count")
+                    
+                    # Solo mostrar en log si hay cambios o pocas repeticiones
                     if same_count_counter < 3:
-                        LOGGER.info(f"\033[1mNúmero de espectadores actuales: \033[31m{viewer_count}\033[0m", )
+                        if not self.message_callback:
+                            self.LOGGER.info(f"\033[1mNúmero de espectadores actuales: \033[31m{viewer_count}\033[0m")
             except Exception as e:
-                LOGGER.warning("Error al obtener el número de espectadores: %s", e)
+                self.LOGGER.warning("Error al obtener el número de espectadores: %s", e)
             
             await asyncio.sleep(180)
     
     async def event_ready(self) -> None:
-        LOGGER.info(f"\033[1m\033[42m\033[30m   BOT Conectado exitosamente   \033[0m")
+        utils_gui.log_and_callback(self, f"\033[1m\033[42m\033[30m   BOT Conectado   \033[0m", self.msg_type)
         channel_info = await self.fetch_channels([str(BROADCASTER_ID)])
-        LOGGER.info(f"\033[32m{channel_info[0].title}\033[0m | \033[32m{channel_info[0].game_name}\033[0m")
-        
+        if self.message_callback:
+            self.message_callback(f"{channel_info[0].title}|{channel_info[0].game_name}", "stream_info")
+        else:
+            self.LOGGER.info(f"\033[32m{channel_info[0].title}\033[0m | \033[32m{channel_info[0].game_name}\033[0m")
+
         asyncio.create_task(self.get_viewer_count())
-        
+    
     async def event_command_error(self, context: commands.Context, error: Exception):
+        """Maneja errores en la ejecución de comandos"""
+        # Registra el error en los logs
+        self.LOGGER.error(f"Error en comando {context.command.name if context.command else 'desconocido'}: {error}")
+        
+        # Importar excepciones correctas
+        from twitchio.ext.commands.exceptions import CommandNotFound, MissingRequiredArgument, GuardFailure
+        
+        if isinstance(error, CommandNotFound):
+            # Ignorar silenciosamente comandos no encontrados
+            return
+        elif isinstance(error, MissingRequiredArgument):
+            await context.send(f"@{context.author.name} Faltan argumentos para el comando.")
+        elif isinstance(error, GuardFailure):
+            # Se dispara cuando fallan los decoradores como @commands.is_broadcaster()
+            await context.send(f"@{context.author.name} No tienes permiso para usar este comando.")
+        else:
+            # Otros errores inesperados
+            self.LOGGER.error(f"Error no manejado: {error}")
+            # Opcional: enviar mensaje genérico al chat
+            # await context.send(f"@{context.author.name} Ocurrió un error al procesar el comando.")
         return
