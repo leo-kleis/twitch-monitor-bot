@@ -1,14 +1,14 @@
 from enum import Enum
 
 class MessageType(Enum):
-    """Enumeración de los tipos de mensajes posibles"""
+    """Enumeracion de los tipos de mensajes posibles"""
     CHAT = "chat"                  # Mensajes normales del chat
     WEBSOCKET = "websocket"        # Mensajes del sistema websocket
     VIEWER_COUNT = "viewer_count"  # Contador de espectadores
-    STREAM_INFO = "stream_info"    # Información del stream
+    STREAM_INFO = "stream_info"    # Informacion del stream
     SYSTEM = "system"              # Mensajes de sistema
     ERROR = "error"                # Mensajes de error
-    SUCCESS = "success"            # Mensajes de éxito/confirmación
+    SUCCESS = "success"            # Mensajes de exito/confirmacion
     WARNING = "warning"            # Advertencias
     COMMAND = "command"            # Comandos ejecutados
     BOT = "bot"                    # Mensajes enviados por el bot
@@ -16,7 +16,7 @@ class MessageType(Enum):
 class StyleManager:
     """Gestiona los estilos y colores para diferentes tipos de mensajes"""
     
-    # Configuración de fuente
+    # Configuracion de fuente
     FONT = {
         'family': "'Kanit', sans-serif",
         'default_size': '14px',
@@ -50,7 +50,7 @@ class StyleManager:
         'italic': 'font-style: italic;',
     }
     
-    # Configuración de estilo para cada tipo de mensaje
+    # Configuracion de estilo para cada tipo de mensaje
     MESSAGE_STYLES = {
         MessageType.CHAT: {
             'color': COLORS['white'],
@@ -103,20 +103,70 @@ class StyleManager:
     }
     
     @classmethod
+    def get_dialog_stylesheet(cls):
+        """Devuelve el estilo para dialogos y sus componentes comunes"""
+        return f"""
+            QDialog {{
+                background-color: #2d2d2d;
+                color: {cls.COLORS['white']};
+                font-family: {cls.FONT['family']};
+            }}
+            QLabel {{
+                color: {cls.COLORS['white']};
+                font-weight: bold;
+                font-family: {cls.FONT['family']};
+                font-size: {cls.FONT['default_size']};
+            }}
+            QLineEdit {{
+                background-color: #1e1e1e;
+                color: {cls.COLORS['white']};
+                border: 1px solid #444;
+                border-radius: 5px;
+                padding: 5px;
+                font-family: {cls.FONT['family']};
+                font-size: {cls.FONT['default_size']};
+            }}
+            QListWidget {{
+                background-color: #1e1e1e;
+                color: {cls.COLORS['white']};
+                border: 1px solid #444;
+                border-radius: 5px;
+                padding: 5px;
+                font-family: {cls.FONT['family']};
+                font-size: {cls.FONT['default_size']};
+            }}
+            QListWidget::item:selected {{
+                background-color: #0078d7;
+            }}
+            QPushButton {{
+                background-color: #0078d7;
+                color: {cls.COLORS['white']};
+                padding: 8px;
+                border-radius: 4px;
+                border: none;
+                font-family: {cls.FONT['family']};
+                font-size: {cls.FONT['default_size']};
+            }}
+            QPushButton:hover {{
+                background-color: #0086f0;
+            }}
+        """
+    
+    @classmethod
     def format_message(cls, message, msg_type_str):
-        """Formatea un mensaje según su tipo"""
+        """Formatea un mensaje segun su tipo"""
         # Convertir string a enum si es necesario
         try:
             msg_type = MessageType(msg_type_str)
         except ValueError:
-            # Si el tipo no está en la enumeración, usar SYSTEM como fallback
+            # Si el tipo no esta en la enumeracion, usar SYSTEM como fallback
             msg_type = MessageType.SYSTEM
         
-        # Obtener configuración de estilo
+        # Obtener configuracion de estilo
         if msg_type in cls.MESSAGE_STYLES:
             style_config = cls.MESSAGE_STYLES[msg_type]
         else:
-            # Estilo por defecto si no hay configuración específica
+            # Estilo por defecto si no hay configuracion especifica
             style_config = {
                 'color': cls.COLORS['white'],
                 'styles': [],
@@ -140,7 +190,7 @@ class StyleManager:
     
     @classmethod
     def get_ansi_colors(cls):
-        """Devuelve el mapa de colores ANSI a HTML para la conversión"""
+        """Devuelve el mapa de colores ANSI a HTML para la conversion"""
         font_family = cls.FONT['family']
         
         return {

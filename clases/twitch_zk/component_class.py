@@ -65,6 +65,8 @@ class MyComponent(commands.Component):
                         "color": utils.assign_random_color(),
                         "nickname": ""
                     }
+                else:
+                    self.bot.user_data_twitch[usuario.name]["follow_date"] = follow_status
 
             user_color = self.bot.user_data_twitch[usuario.name]["color"]
             nickuser = self.bot.user_data_twitch[usuario.name]["nickname"]
@@ -131,7 +133,7 @@ class MyComponent(commands.Component):
 
     @commands.command(aliases=["commands"])
     async def help(self, ctx: commands.Context, add: str | None = None) -> None:
-        """Comando que envía la lista de comandos disponibles.
+        """Comando que envia la lista de comandos disponibles.
     
         !help, !commands
         """
@@ -168,11 +170,11 @@ class MyComponent(commands.Component):
 
     @commands.command(aliases=["ds"])
     async def discord(self, ctx: commands.Context) -> None:
-        """Comando que envía la invitación de discord.
+        """Comando que envia la invitacion de discord.
 
         !discord, !ds
         """
-        await ctx.send("Link de discord: discord.gg/UwbUxbj - Igualmente también pueden copiar el código: UwbUxbj")
+        await ctx.send("Link de discord: discord.gg/UwbUxbj - Igualmente tambien pueden copiar el codigo: UwbUxbj")
 
 
     @commands.group(invoke_fallback=True, aliases=["social", "rrss"])
@@ -185,15 +187,15 @@ class MyComponent(commands.Component):
 
     @socials.command(name="discord", aliases=["ds"])
     async def socials_discord(self, ctx: commands.Context) -> None:
-        """Subcomando de socials que envía solo nuestra invitación de discord.
+        """Subcomando de socials que envia solo nuestra invitacion de discord.
 
         !socials discord
         """
-        await ctx.send("Link de discord: discord.gg/UwbUxbj - Igualmente también pueden copiar el código: UwbUxbj")
+        await ctx.send("Link de discord: discord.gg/UwbUxbj - Igualmente tambien pueden copiar el codigo: UwbUxbj")
         
     @socials.command(name="tiktok", aliases=["tt"])
     async def socials_tiktok(self, ctx: commands.Context) -> None:
-        """Subcomando de socials que envía solo nuestro enlace de tiktok.
+        """Subcomando de socials que envia solo nuestro enlace de tiktok.
 
         !socials tiktok
         """
@@ -201,7 +203,7 @@ class MyComponent(commands.Component):
         
     @socials.command(name="facebook", aliases=["fb"])
     async def socials_facebook(self, ctx: commands.Context) -> None:
-        """Subcomando de socials que envía solo nuestro enlace de facebook.
+        """Subcomando de socials que envia solo nuestro enlace de facebook.
 
         !socials facebook
         """
@@ -220,7 +222,7 @@ class MyComponent(commands.Component):
         
     @commands.command(aliases=["titulo", "tit"])
     async def title(self, ctx: commands.Context) -> None:
-        """Comando que envía el titulo del stream.
+        """Comando que envia el titulo del stream.
 
         !title
         """
@@ -230,7 +232,7 @@ class MyComponent(commands.Component):
         print(channel)
         title = channel.title
         print(title)
-        await ctx.send(f"El título del stream es: {title}")
+        await ctx.send(f"El titulo del stream es: {title}")
         
     @commands.command(aliases=["settitle"])
     @commands.is_moderator()  #? Solo para moderadores
@@ -261,7 +263,7 @@ class MyComponent(commands.Component):
     @commands.command(aliases=["getgame"])
     @commands.is_moderator()  #? Solo para moderadores
     async def games(self, ctx: commands.Context) -> None:
-        """Comando que envía la lista de juegos disponibles.
+        """Comando que envia la lista de juegos disponibles.
 
         !getgame, !games
         """
@@ -272,25 +274,25 @@ class MyComponent(commands.Component):
     @commands.command(aliases=["activar", "on"])
     @commands.is_broadcaster()
     async def activate(self, ctx: commands.Context, maximo: int = 20) -> None:
-        """Comando solo para el broadcaster, que activa Gemi IA con límite configurable (mínimo 5)."""
+        """Comando solo para el broadcaster, que activa Gemi IA con limite configurable (minimo 5)."""
         global charla
         # Verificar si ya existe una instancia activa
         if charla is not None:
             if charla.is_active():
-                await ctx.reply("Gemi ya está activa. Desactívala primero con ?off antes de iniciar una nueva instancia.")
+                await ctx.reply("Gemi ya esta activa. Desactivala primero con ?off antes de iniciar una nueva instancia.")
                 return
             else:
-                # Si existe pero no está activa, la terminamos correctamente
+                # Si existe pero no esta activa, la terminamos correctamente
                 charla.terminate(False)
                 charla = None
-        # Verificar el valor mínimo
+        # Verificar el valor minimo
         if maximo < 5:
-            await ctx.reply("Error: El límite de mensajes debe ser al menos 5.")
+            await ctx.reply("Error: El limite de mensajes debe ser al menos 5.")
             return
         canal = await ctx.channel.fetch_channel_info(token_for=self.bot.user)
         model = await utils.iniciar_gemi(canal)
         charla = Gemi(model, max_messages=maximo, bot=self.bot)
-        await ctx.reply(f"Gemi ON con límite de {maximo} mensajes.")
+        await ctx.reply(f"Gemi ON con limite de {maximo} mensajes.")
         
     @commands.command(aliases=["desactivar", "off"])
     @commands.is_broadcaster()  #! Solo para moderadores
@@ -312,7 +314,7 @@ class MyComponent(commands.Component):
         global charla
         if charla is not None:
             if not charla.is_active():
-                await ctx.send("Gemi ha alcanzado el límite de mensajes.")
+                await ctx.send("Gemi ha alcanzado el limite de mensajes.")
                 charla = None
                 return
             usuario = ctx.chatter.name
@@ -321,7 +323,7 @@ class MyComponent(commands.Component):
             
             if not charla.is_active():
                 await ctx.send(response)
-                await ctx.send("Gemi ha alcanzado el límite de mensajes y se ha desactivado.")
+                await ctx.send("Gemi ha alcanzado el limite de mensajes y se ha desactivado.")
                 charla = None
                 return
                 

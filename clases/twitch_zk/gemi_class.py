@@ -16,7 +16,7 @@ class Gemi:
         
         Args:
             model: El modelo de Gemini configurado
-            max_messages: Número máximo de mensajes antes de desactivarse (default: 20)
+            max_messages: Numero maximo de mensajes antes de desactivarse (default: 20)
             bot: Referencia al bot de Twitch para ejecutar comandos
         """
         self.model = model
@@ -28,17 +28,17 @@ class Gemi:
         self.bot = bot
     
     def send_message(self, usuario, message, ctx=None):
-        """Envía un mensaje de un usuario específico al chat grupal"""
-        # Si superó el límite, no procesar más mensajes
+        """Envia un mensaje de un usuario especifico al chat grupal"""
+        # Si supero el limite, no procesar mas mensajes
         if not self.active:
-            return "Gemi ha alcanzado el límite de mensajes."
+            return "Gemi ha alcanzado el limite de mensajes."
         
         self.participants.add(usuario)
         
         # Formatea el mensaje con el nombre del usuario
         formatted_message = f"{usuario}: {message}"
         
-        # Envía el mensaje al chat
+        # Envia el mensaje al chat
         response = self.chat.send_message(formatted_message)
         # Variable para almacenar el texto de respuesta
         response_text = None
@@ -65,13 +65,13 @@ class Gemi:
                                     response_text = str(response_text) + " | " + part.text
         except Exception as e:
             LOGGER.info(f"Error al procesar respuesta: {str(e)}")
-            response_text = "Lo siento, ocurrió un error al procesar tu mensaje."
+            response_text = "Lo siento, ocurrio un error al procesar tu mensaje."
         
-        # Si no se pudo extraer ningún texto, asignar un valor predeterminado
+        # Si no se pudo extraer ningun texto, asignar un valor predeterminado
         if response_text is None:
             response_text = "Lo siento, no pude procesar tu solicitud correctamente."
         
-        # Incrementar contador después de procesar el mensaje
+        # Incrementar contador despues de procesar el mensaje
         self.message_count += 1
         
         maximo = self.max_messages
@@ -81,7 +81,7 @@ class Gemi:
             if ctx is not None:
                 asyncio.create_task(ctx.send(f"Solo quedan {aviso} mensajes para que Gemi se desactive."))
         
-        # Verificar si llegamos al límite después de esta respuesta
+        # Verificar si llegamos al limite despues de esta respuesta
         if self.message_count >= self.max_messages:
             self.active = False
             self.terminate(True)
@@ -97,9 +97,9 @@ class Gemi:
         args = function_call.args
         
         if function_name == "change_title" and "title" in args:
-            # Usar el comando del bot para cambiar el título
+            # Usar el comando del bot para cambiar el titulo
             asyncio.create_task(ctx.channel.modify_channel(title=args["title"]))
-            return f"He cambiado el título del stream a: {args['title']}"
+            return f"He cambiado el titulo del stream a: {args['title']}"
         
         return "No pude ejecutar el comando solicitado."
     
@@ -108,7 +108,7 @@ class Gemi:
         return self.chat.history
     
     def get_message_count(self):
-        """Obtiene el número de mensajes intercambiados"""
+        """Obtiene el numero de mensajes intercambiados"""
         return self.message_count
     
     def get_participants(self):
@@ -116,18 +116,18 @@ class Gemi:
         return list(self.participants)
     
     def is_active(self):
-        """Verifica si Gemi sigue activo o ya alcanzó el límite"""
+        """Verifica si Gemi sigue activo o ya alcanzo el limite"""
         return self.active
     
     def terminate(self, suceso):
         """Finaliza la instancia de Gemi y libera recursos y guarda el historial"""
         self.active = False
         if suceso == True:
-            LOGGER.info(f"Gemi ha alcanzado el límite de {self.max_messages} mensajes y se desactivará.")
+            LOGGER.info(f"Gemi ha alcanzado el limite de {self.max_messages} mensajes y se desactivara.")
         else:
             LOGGER.info(f"Gemi ha sido desactivado manualmente.")
         
-        # Guardar el historial de la conversación
+        # Guardar el historial de la conversacion
         self._save_chat_history()
     
     def _save_chat_history(self):
@@ -162,7 +162,7 @@ class Gemi:
                 content = [part.text for part in message.parts if hasattr(part, 'text')]
                 content_text = " ".join(content) if content else ""
                 
-                # Para mensajes de usuario, extraer el nombre si está en formato "nombre: mensaje"
+                # Para mensajes de usuario, extraer el nombre si esta en formato "nombre: mensaje"
                 user_name = None
                 if role == "user" and ":" in content_text:
                     parts = content_text.split(":", 1)

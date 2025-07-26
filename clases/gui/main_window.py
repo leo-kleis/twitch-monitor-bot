@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QPushButton, 
-                            QTextEdit, QLabel, QSplitter, QHBoxLayout, QSizePolicy, QFrame)
+                            QTextEdit, QLabel, QSplitter, QHBoxLayout, QSizePolicy, QFrame,
+                            QDialog, QDialogButtonBox, QListWidget, QLineEdit)
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, Qt
 import asyncio
 import asqlite
@@ -9,11 +10,11 @@ from clases.twitch_zk import Bot
 from clases.twitch_zk import Gemi
 from recurso.twitch_zk import utils
 from clases.twitch_zk import WebSocketClient
-from recurso.gui.style_manager import StyleManager, MessageType
+from recurso.gui.style_manager import StyleManager
 
 
 class BotController(QObject):
-    """Clase intermedia que maneja la comunicación entre la GUI y el bot"""
+    """Clase intermedia que maneja la comunicacion entre la GUI y el bot"""
     message_received = pyqtSignal(str, str)  # Señal para nuevos mensajes (mensaje, tipo)
     bot_started = pyqtSignal()
     bot_stopped = pyqtSignal()
@@ -26,7 +27,7 @@ class BotController(QObject):
         self.ws_client = None
         self.running = False
         
-        # Configuración desde el .env
+        # Configuracion desde el .env
         load_dotenv()
         self.oauth_token = os.getenv("TTG_BOT_TOKEN")
         self.bot_name = os.getenv("BOT")
@@ -36,7 +37,7 @@ class BotController(QObject):
         if self.running:
             return
             
-        # Lógica similar a tu main.py para iniciar el bot
+        # Logica similar a tu main.py para iniciar el bot
         db_path_twitch = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
                                      'bd/data', 'tokens_twitch.db')
         
@@ -63,7 +64,7 @@ class BotController(QObject):
             message_callback=lambda msg, msg_type="websocket": self.message_received.emit(msg, msg_type)
         )
         
-        # Iniciar la conexión
+        # Iniciar la conexion
         connection_success = await self.ws_client.connect()
         
         # Iniciar el bot en segundo plano
@@ -83,11 +84,11 @@ class BotController(QObject):
             
         # Detener el bot y limpiar recursos
         self.running = False
-        # Lógica para detener correctamente el bot
+        # Logica para detener correctamente el bot
         self.bot_stopped.emit()
         
-    async def cleanup_resources(self):
-        """Guardar datos y limpiar recursos antes de cerrar la aplicación"""
+    async def cleanup_resources(self, file_path_user_data_twitch):
+        """Guardar datos y limpiar recursos antes de cerrar la aplicacion"""
         from clases.twitch_zk import save_active_chat_history
         import recurso.twitch_zk.utils as utils
         
@@ -95,17 +96,17 @@ class BotController(QObject):
         save_active_chat_history()
         
         # Guardar datos de usuario
-        file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
-                               'recurso/twitch_zk/data', 'user_data_twitch.json')
-        utils.save_user_data_twitch(file_path, self.user_data_twitch)
-        
+        utils.save_user_data_twitch(file_path_user_data_twitch, self.user_data_twitch)
+
         # Si hay alguna otra limpieza necesaria para el bot o websocket
         if self.bot is not None:
             # Limpiar recursos del bot si es necesario
             pass
 
 class MainWindow(QMainWindow):
-    def __init__(self, userbots, user_data_twitch):
+    def __init__(self, userbots, user_data_twitch, file_path_user_data_twitch):
+        """Constructor de la ventana principal"""
+        self.file_path_user_data_twitch = file_path_user_data_twitch
         super().__init__()
         self.setWindowTitle("Twitch Bot Manager")
         self.setGeometry(100, 100, 1000, 600)
@@ -183,19 +184,19 @@ class MainWindow(QMainWindow):
         # Espaciador
         info_layout.addSpacing(15)
 
-        # Título del stream
+        # Titulo del stream
         self.title_label = QLabel()
         self.title_label.setTextFormat(Qt.TextFormat.RichText)
-        self.title_label.setText(StyleManager.format_label_value("Título", "-", 'white', 'green'))
+        self.title_label.setText(StyleManager.format_label_value("Titulo", "-", 'white', 'green'))
         info_layout.addWidget(self.title_label)
 
         # Espaciador
         info_layout.addSpacing(15)
         
-        # Categoría del stream
+        # Categoria del stream
         self.category_label = QLabel()
         self.category_label.setTextFormat(Qt.TextFormat.RichText)
-        self.category_label.setText(StyleManager.format_label_value("Categoría", "-", 'white', 'green'))
+        self.category_label.setText(StyleManager.format_label_value("Categoria", "-", 'white', 'green'))
         info_layout.addWidget(self.category_label)
         
         # Espacio flexible para empujar el contador de espectadores a la derecha
@@ -208,7 +209,7 @@ class MainWindow(QMainWindow):
         self.viewers_label.setText(StyleManager.format_label_value("Espectadores", "-", 'white', 'red'))
         info_layout.addWidget(self.viewers_label)
         
-        # Añadir la barra de información al layout principal
+        # Añadir la barra de informacion al layout principal
         main_layout.addLayout(info_layout)
         
         # Añadir un separador visual (opcional)
@@ -269,26 +270,32 @@ class MainWindow(QMainWindow):
         buttons_layout = QHBoxLayout()
         
         self.start_button_gemi = QPushButton("Iniciar Gemi")
-        self.start_button_gemi.setMaximumHeight(40)  # Altura máxima en píxeles
+        self.start_button_gemi.setMaximumHeight(40)  # Altura maxima en pixeles
         self.start_button_gemi.clicked.connect(self.start_gemi)
         buttons_layout.addWidget(self.start_button_gemi)
         
         self.stop_button_gemi = QPushButton("Detener Gemi")
-        self.stop_button_gemi.setMaximumHeight(40)   # Altura máxima en píxeles
+        self.stop_button_gemi.setMaximumHeight(40)   # Altura maxima en pixeles
         self.stop_button_gemi.clicked.connect(self.stop_gemi)
         self.stop_button_gemi.setEnabled(False)
         buttons_layout.addWidget(self.stop_button_gemi)
         
         buttons_layout.addStretch()
         
+        # Boton para ver usuarios - en el extremo derecho
+        self.view_users_button = QPushButton("Ver Usuarios")
+        self.view_users_button.setMaximumHeight(40)
+        self.view_users_button.clicked.connect(self.show_users)
+        buttons_layout.addWidget(self.view_users_button)
+        
         main_layout.addLayout(buttons_layout)
 
         # Hacer que el splitter ocupe todo el espacio disponible
         splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
-        # Configurar tamaño mínimo para los cuadros de texto
-        self.chat_area.setMinimumHeight(300)  # Altura mínima en píxeles
-        self.users_area.setMinimumHeight(300)  # Altura mínima en píxeles
+        # Configurar tamaño minimo para los cuadros de texto
+        self.chat_area.setMinimumHeight(300)  # Altura minima en pixeles
+        self.users_area.setMinimumHeight(300)  # Altura minima en pixeles
         
     @pyqtSlot()
     def start_bot(self):
@@ -301,17 +308,17 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def start_gemi(self):
         """Inicia el bot de Gemini"""
-        # Desactivar el botón de inicio y activar el botón de detención
+        # Desactivar el boton de inicio y activar el boton de detencion
         self.start_button_gemi.setEnabled(False)
         self.stop_button_gemi.setEnabled(True)
         
-        # Crear una tarea asíncrona para iniciar Gemini
+        # Crear una tarea asincrona para iniciar Gemini
         asyncio.create_task(self._start_gemi_async())
         
     async def _start_gemi_async(self):
-        """Implementación asíncrona para iniciar Gemini"""
+        """Implementacion asincrona para iniciar Gemini"""
         try:
-            # Verificar que el bot esté disponible
+            # Verificar que el bot este disponible
             if not self.bot_controller.bot:
                 formatted_message = '<div style="font-family: Kanit, sans-serif; font-size: 14px; margin: 3px 0; display: block;"><span style="color:red;">Error: Bot no inicializado</span><br></div>'
                 cursor = self.users_area.textCursor()
@@ -333,11 +340,11 @@ class MainWindow(QMainWindow):
                 if charla.is_active():
                     await self.usuario_canal.send_message(
                         sender = str(self.BOT_ID),
-                        message = "Gemi ya está activado.",
+                        message = "Gemi ya esta activado.",
                         token_for = self.bot_controller.oauth_token
                     )
                     
-                    formatted_message = '<div style="font-family: Kanit, sans-serif; font-size: 14px; margin: 3px 0; display: block;"><span style="color:#4aff4a; text-decoration: underline; font-weight: bold;">Gemi ya está activado.</span><br></div>'
+                    formatted_message = '<div style="font-family: Kanit, sans-serif; font-size: 14px; margin: 3px 0; display: block;"><span style="color:#4aff4a; text-decoration: underline; font-weight: bold;">Gemi ya esta activado.</span><br></div>'
                     cursor = self.users_area.textCursor()
                     cursor.movePosition(cursor.End)
                     cursor.insertHtml(formatted_message)
@@ -350,7 +357,7 @@ class MainWindow(QMainWindow):
 
             # Usar el bot desde bot_controller
             channel_info = await self.bot_controller.bot.fetch_channels([str(self.BROADCASTER_ID)])
-            # Iniciar Gemini con la información del canal
+            # Iniciar Gemini con la informacion del canal
             model = await utils.iniciar_gemi(channel_info[0])
 
             self.charla = Gemi(model, max_messages=20, bot=self.bot_controller.bot)
@@ -359,11 +366,11 @@ class MainWindow(QMainWindow):
             
             await self.usuario_canal.send_message(
                 sender = str(self.BOT_ID),
-                message = "Gemi iniciado con límite de 20 mensajes.",
+                message = "Gemi iniciado con limite de 20 mensajes.",
                 token_for = self.bot_controller.oauth_token
             )
             
-            # Informar que se inició correctamente
+            # Informar que se inicio correctamente
             formatted_message = '<div style="font-family: Kanit, sans-serif; font-size: 14px; margin: 3px 0; display: block;"><span style="color:#4aff4a; text-decoration: underline; font-weight: bold;">Gemi iniciado</span><br></div>'
             cursor = self.users_area.textCursor()
             cursor.movePosition(cursor.End)
@@ -413,7 +420,7 @@ class MainWindow(QMainWindow):
         if charla is not None:
             charla.terminate(False)
         
-        # Resetear la variable en el módulo component_class
+        # Resetear la variable en el modulo component_class
         import sys
         setattr(sys.modules['clases.twitch_zk.component_class'], 'charla', None)
         
@@ -436,7 +443,7 @@ class MainWindow(QMainWindow):
             # Actualizar el label dedicado con formato de color
             viewers_html = StyleManager.format_label_value("Espectadores", message, 'white', 'red')
             
-            # Activar interpretación de HTML
+            # Activar interpretacion de HTML
             self.viewers_label.setTextFormat(Qt.TextFormat.RichText)
             
             # Aplicar el texto formateado
@@ -470,12 +477,12 @@ class MainWindow(QMainWindow):
             self.chat_area.ensureCursorVisible()
             
     def update_stream_info(self, title, category):
-        """Actualiza la información del stream en la interfaz"""
-        # Usar el nuevo método del StyleManager
-        title_html = StyleManager.format_label_value("Título", title, 'white', 'green')
-        category_html = StyleManager.format_label_value("Categoría", category, 'white', 'green')
+        """Actualiza la informacion del stream en la interfaz"""
+        # Usar el nuevo metodo del StyleManager
+        title_html = StyleManager.format_label_value("Titulo", title, 'white', 'green')
+        category_html = StyleManager.format_label_value("Categoria", category, 'white', 'green')
         
-        # Activar interpretación de HTML en los labels
+        # Activar interpretacion de HTML en los labels
         self.title_label.setTextFormat(Qt.TextFormat.RichText)
         self.category_label.setTextFormat(Qt.TextFormat.RichText)
         
@@ -483,16 +490,158 @@ class MainWindow(QMainWindow):
         self.title_label.setText(title_html)
         self.category_label.setText(category_html)  
     
+    @pyqtSlot()
+    def show_users(self):
+        """Muestra un dialogo con la lista de usuarios en user_data_twitch con filtro por nombre"""
+        # Crear dialogo
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Usuarios")
+        dialog.setMinimumWidth(400)
+        dialog.setMinimumHeight(300)
+        
+        # Aplicar estilos desde StyleManager
+        dialog.setStyleSheet(StyleManager.get_dialog_stylesheet())
+        
+        layout = QVBoxLayout(dialog)
+        
+        filter_layout = QHBoxLayout()
+        filter_label = QLabel("Buscar:")
+        filter_label.setStyleSheet(f"color: {StyleManager.COLORS['blue']};")
+        filter_layout.addWidget(filter_label)
+    
+        filter_input = QLineEdit()
+        filter_input.setPlaceholderText("Escriba para buscar por nombre...")
+        filter_layout.addWidget(filter_input)
+        layout.addLayout(filter_layout)
+        
+        # Lista de usuarios
+        user_list = QListWidget()
+        layout.addWidget(user_list)
+        
+        # Almacenar todos los usuarios para poder filtrarlos
+        all_users = []
+        # Lista para mantener referencia a los usuarios filtrados actualmente mostrados
+        filtered_users = []
+        
+        # Rellenar la lista con los usuarios
+        if self.bot_controller.user_data_twitch:
+            for user_name, user_data in self.bot_controller.user_data_twitch.items():
+                # user_data es un diccionario con la informacion del usuario {id, follow_date, color, nickname}
+                follow_date = user_data['follow_date']
+                nickname = user_data['nickname']
+                
+                if nickname != "":
+                    nickname = f"({nickname}) "
+                
+                display_text = f"{nickname}{user_name} [{follow_date}]"
+                all_users.append((display_text, user_name))
+                user_list.addItem(display_text)
+            
+            # Inicializar filtered_users con todos los usuarios
+            filtered_users = all_users.copy()
+        else:
+            user_list.addItem("No hay usuarios registrados.")
+        
+        # Funcion para filtrar la lista
+        def filter_users():
+            filter_text = filter_input.text().lower()
+            user_list.clear()
+            filtered_users.clear()  # Limpiar la lista de usuarios filtrados
+            
+            for display_text, name in all_users:
+                # Obtener el nickname del usuario actual
+                user_data = self.bot_controller.user_data_twitch.get(name)
+                nickname = user_data.get('nickname', '').lower()
+                
+                # Buscar en nombre y nickname
+                if filter_text in name.lower() or filter_text in nickname:
+                    user_list.addItem(display_text)
+                    filtered_users.append((display_text, name))  # Añadir a la lista filtrada
+            
+            if user_list.count() == 0:
+                user_list.addItem("No se encontraron coincidencias.")
+        
+        # Conectar el evento de cambio de texto
+        filter_input.textChanged.connect(filter_users)
+        
+        # Conectar el evento de doble clic para editar el nickname
+        # Ahora usamos filtered_users en lugar de all_users
+        user_list.itemDoubleClicked.connect(lambda item: self.edit_user_nickname(dialog, filtered_users, user_list.currentRow()))
+        
+        # Botones
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok)
+        buttons.accepted.connect(dialog.accept)
+        layout.addWidget(buttons)
+        
+        # Mostrar dialogo
+        dialog.exec_()
+    
+    def edit_user_nickname(self, parent_dialog, all_users, current_row):
+        """Abre un dialogo para editar el nickname del usuario seleccionado"""
+        if current_row < 0 or current_row >= len(all_users):
+            return
+        
+        # Obtener el nombre de usuario seleccionado
+        _, user_name = all_users[current_row]
+        
+        # Obtener datos actuales del usuario
+        user_data = self.bot_controller.user_data_twitch.get(user_name)
+        if not user_data:
+            return
+        
+        current_nickname = user_data.get('nickname', '')
+        
+        # Crear dialogo de edicion
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox
+        
+        edit_dialog = QDialog(parent_dialog)
+        edit_dialog.setWindowTitle(f"Editar Nickname - {user_name}")
+        edit_dialog.setMinimumWidth(300)
+        edit_dialog.setStyleSheet(StyleManager.get_dialog_stylesheet())
+        
+        layout = QVBoxLayout(edit_dialog)
+        
+        # Informacion del usuario
+        info_label = QLabel(f"Usuario: {user_name}")
+        info_label.setStyleSheet(f"color: {StyleManager.COLORS['blue']};")
+        layout.addWidget(info_label)
+        
+        # Campo para editar el nickname
+        nickname_label = QLabel("Nickname:")
+        layout.addWidget(nickname_label)
+        
+        nickname_input = QLineEdit()
+        nickname_input.setText(current_nickname)
+        nickname_input.selectAll()  # Seleccionar todo el texto para facilitar la edicion
+        layout.addWidget(nickname_input)
+        
+        # Botones
+        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(edit_dialog.accept)
+        buttons.rejected.connect(edit_dialog.reject)
+        layout.addWidget(buttons)
+        
+        # Mostrar dialogo y procesar resultado
+        if edit_dialog.exec_() == QDialog.Accepted:
+            new_nickname = nickname_input.text().strip()
+            
+            # Actualizar el nickname en el diccionario
+            self.bot_controller.user_data_twitch[user_name]['nickname'] = new_nickname
+            
+            # Actualizar la lista en el dialogo principal
+            parent_dialog.accept()  # Cerrar el dialogo actual
+            self.show_users()  # Volver a abrir con la informacion actualizada
+    
     def closeEvent(self, event):
         async def shutdown_sequence():
             if self.bot_controller.running:
                 await self.bot_controller.stop_bot()
-            await self.bot_controller.cleanup_resources()
+            await self.bot_controller.cleanup_resources(self.file_path_user_data_twitch)
         
         # Crear la tarea y programarla en el bucle existente
-        # No usamos run_until_complete porque el bucle ya está corriendo
+        # No usamos run_until_complete porque el bucle ya esta corriendo
         future = asyncio.ensure_future(shutdown_sequence())
         
         # No esperamos a que termine para aceptar el evento de cierre
-        # Ya que estamos en la interfaz gráfica
+        # Ya que estamos en la interfaz grafica
         event.accept()

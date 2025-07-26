@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # Cargar variables de entorno
 load_dotenv()
 
-# Configuración
+# Configuracion
 CLIENT_ID = os.getenv("TTG_BOT_CLIENT_ID")
 TOKEN = os.getenv("TTG_BOT_TOKEN")
 # Corregir la ruta del archivo JSON
@@ -15,7 +15,7 @@ JSON_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__
                              'recurso', 'twitch_zk', 'data', 'user_data_twitch.json')
 
 def get_user_info(username, oauth_token):
-    """Obtiene información de un usuario de Twitch."""
+    """Obtiene informacion de un usuario de Twitch."""
     headers = {
         'Client-ID': CLIENT_ID,
         'Authorization': f'Bearer {oauth_token}'
@@ -68,7 +68,7 @@ def main():
     
     print(f"Archivo JSON cargado desde: {JSON_FILE_PATH}")
     
-    # Contador para estadísticas
+    # Contador para estadisticas
     total_users = len(user_data)
     updated_users = 0
     not_found_users = 0
@@ -79,13 +79,13 @@ def main():
     for i, (username, user_info) in enumerate(user_data.items()):
         print(f"[{i+1}/{total_users}] Procesando {username}...", end=" ")
         
-        # Verificar si ya tiene ID con valor no vacío
+        # Verificar si ya tiene ID con valor no vacio
         if user_info.get("id"):
             print(f"Ya tiene ID: {user_info['id']}")
             updated_users += 1
             continue
         
-        # Obtener información del usuario
+        # Obtener informacion del usuario
         user_data_from_api = get_user_info(username, TOKEN)
         
         if user_data_from_api:
@@ -101,22 +101,22 @@ def main():
             print(f"ID obtenido: {updated_info['id']}")
             updated_users += 1
         else:
-            # Si no se encuentra, asignar un ID vacío pero mantener el orden
+            # Si no se encuentra, asignar un ID vacio pero mantener el orden
             user_data[username] = {
                 "id": "",
                 "follow_date": user_info.get("follow_date", "New"),
                 "color": user_info.get("color", "\u001b[97m"),
                 "nickname": user_info.get("nickname", "")
             }
-            print("No se encontró en Twitch")
+            print("No se encontro en Twitch")
             not_found_users += 1
         
-        # Guardar periódicamente y pausa para no exceder los límites de la API
+        # Guardar periodicamente y pausa para no exceder los limites de la API
         if (i + 1) % 10 == 0:
-            print(f"Guardando datos después de {i + 1} usuarios...")
+            print(f"Guardando datos despues de {i + 1} usuarios...")
             user_data = save_user_data(user_data)
         
-        # Pausa entre solicitudes para no exceder límites de la API
+        # Pausa entre solicitudes para no exceder limites de la API
         time.sleep(0.5)
     
     # Guardar cambios finales asegurando el orden correcto

@@ -3,19 +3,28 @@ from datetime import datetime
 from recurso.gui.style_manager import StyleManager
 
 def ansi_to_html(text):
-    """Convierte códigos ANSI de color a HTML"""
+    """Convierte codigos ANSI de color a HTML y elimina acentos"""
     # Usar colores del StyleManager
     ansi_colors = StyleManager.get_ansi_colors()
 
-    # Procesar códigos ANSI
+    # Procesar codigos ANSI
     for ansi, html in ansi_colors.items():
         if ansi in text:
             text = text.replace(ansi, html)
     
-    # Limpiar cualquier código ANSI restante
+    # Limpiar cualquier codigo ANSI restante
     text = re.sub(r'\033\[[0-9;]*m', '', text)
     
-    # Asegurar que todos los spans estén cerrados
+    # Reemplazar caracteres acentuados
+    replacements = {
+        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
+        'ñ': 'n', 'Ñ': 'N', 'ü': 'u', 'Ü': 'U'
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+    
+    # Asegurar que todos los spans esten cerrados
     open_spans = text.count('<span')
     close_spans = text.count('</span>')
     if open_spans > close_spans:
@@ -24,12 +33,12 @@ def ansi_to_html(text):
     return text
 
 def log_and_callback(self, message, msg_type):
-    """Registra un mensaje en el log y lo envía al callback si está definido"""
+    """Registra un mensaje en el log y lo envia al callback si esta definido"""
     self.LOGGER.info(message)  # Siempre registra en consola
     
-    # Solo envía al callback si existe (modo GUI)
+    # Solo envia al callback si existe (modo GUI)
     if self.message_callback:
-        # En lugar de eliminar los códigos ANSI, conviértelos a HTML
+        # En lugar de eliminar los codigos ANSI, conviertelos a HTML
         html_message = ansi_to_html(message)
         
         # Obtener la hora actual en formato HH:MM:SS

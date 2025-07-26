@@ -24,7 +24,7 @@ class WebSocketClient:
         try:
             self.websocket = await websockets.connect(self.uri)
             
-            # Autenticación con el servidor de IRC
+            # Autenticacion con el servidor de IRC
             await self.websocket.send(f"PASS oauth:{self.oauth_token}")
             await self.websocket.send(f"NICK {self.username}")
             await self.websocket.send("CAP REQ :twitch.tv/membership")  # Habilita eventos JOIN/PART
@@ -60,7 +60,7 @@ class WebSocketClient:
     async def listen(self):
         """Escuchar mensajes del websocket"""
         if not self.websocket:
-            self.LOGGER.error("No hay conexión websocket establecida")
+            self.LOGGER.error("No hay conexion websocket establecida")
             return
     
         try:
@@ -77,41 +77,41 @@ class WebSocketClient:
                     if "#" + self.channel in str(message):
                         tags_dict = self._parse_tags(str(message))
                         
-                        # Determinar si es para un usuario específico o limpieza general
+                        # Determinar si es para un usuario especifico o limpieza general
                         is_user_targeted = ":" in str(message).split("#" + self.channel + " :")
                         
                         if is_user_targeted:
-                            # Ban o timeout a un usuario específico
+                            # Ban o timeout a un usuario especifico
                             user = str(message).split("#" + self.channel + " :")[1].strip()
                             
-                            # Extraer información de moderación
+                            # Extraer informacion de moderacion
                             ban_duration = tags_dict.get("ban-duration", None)
                             ban_reason = tags_dict.get("ban-reason", "").replace("\\s", " ")
                             
                             if ban_duration:
                                 action_type = f"timeout por {ban_duration} segundos"
                                 if ban_reason:
-                                    action_type += f" - Razón: {ban_reason}"
+                                    action_type += f" - Razon: {ban_reason}"
                             else:
                                 action_type = "ban permanente"
                                 if ban_reason:
-                                    action_type += f" - Razón: {ban_reason}"
+                                    action_type += f" - Razon: {ban_reason}"
                                     
-                            utils_gui.log_and_callback(self, f"\033[1m\033[43m\033[30m Usuario {user} recibió {action_type} \033[0m", self.msg_type)
+                            utils_gui.log_and_callback(self, f"\033[1m\033[43m\033[30m Usuario {user} recibio {action_type} \033[0m", self.msg_type)
                         else:
                             # Limpieza completa del chat (/clear)
                             utils_gui.log_and_callback(self, f"\033[1m\033[43m\033[30m Chat limpiado completamente \033[0m", self.msg_type)
 
-                # Manejo de CLEARMSG (eliminación de mensaje individual)
+                # Manejo de CLEARMSG (eliminacion de mensaje individual)
                 elif "CLEARMSG" in str(message):
                     if "#" + self.channel in str(message):
                         tags_dict = self._parse_tags(str(message))
                         
-                        # Extraer información del mensaje eliminado
+                        # Extraer informacion del mensaje eliminado
                         login = tags_dict.get("login", "desconocido")
                         target_msg_id = tags_dict.get("target-msg-id", "")
                         
-                        # Extraer el contenido del mensaje eliminado si está disponible
+                        # Extraer el contenido del mensaje eliminado si esta disponible
                         msg_content = ""
                         if ":" in str(message).split("#" + self.channel + " :"):
                             msg_content = str(message).split("#" + self.channel + " :")[1].strip()
@@ -119,7 +119,7 @@ class WebSocketClient:
 
                         utils_gui.log_and_callback(self, f"\033[1m\033[43m\033[30m Mensaje de {login} eliminado{msg_content} \033[0m", self.msg_type)
 
-                # Manejo de múltiples eventos JOIN/PART
+                # Manejo de multiples eventos JOIN/PART
                 for line in str(message).split("\r\n"):
                     if "JOIN" in line:
                         try:
@@ -150,7 +150,7 @@ class WebSocketClient:
                                 user_color = self.user_data_twitch[user]["color"]
                                 nickuser = self.user_data_twitch[user]["nickname"]
                                 formatted_nick = f"[{nickuser}] " if nickuser else ""
-                                utils_gui.log_and_callback(self, f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[32mse unió al canal\033[0m", self.msg_type)
+                                utils_gui.log_and_callback(self, f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[32mse unio al canal\033[0m", self.msg_type)
                         except IndexError:
                             pass
 
@@ -175,11 +175,11 @@ class WebSocketClient:
                                 user_color = self.user_data_twitch[user]["color"]
                                 nickuser = self.user_data_twitch[user]["nickname"]
                                 formatted_nick = f"[{nickuser}] " if nickuser else ""
-                                utils_gui.log_and_callback(self, f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[31msalió del canal\033[0m", self.msg_type)
+                                utils_gui.log_and_callback(self, f"{user_color}{user}\033[0m {formatted_nick}({follow_status}) \033[31msalio del canal\033[0m", self.msg_type)
                         except IndexError:
                             pass
         except websockets.exceptions.ConnectionClosed:
-            self.LOGGER.warning("Conexión websocket cerrada")
+            self.LOGGER.warning("Conexion websocket cerrada")
         except Exception as e:
             self.LOGGER.error(f"Error en el websocket: {e}")
         finally:

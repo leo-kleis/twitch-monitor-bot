@@ -31,7 +31,7 @@ class Bot(commands.Bot):
         self.LOGGER.setLevel(logging.INFO)
 
     async def setup_hook(self) -> None:
-        # Importación local para evitar referencias circulares
+        # Importacion local para evitar referencias circulares
         from clases.twitch_zk.component_class import MyComponent
         
         # Agregar nuestro componente que contiene nuestros comandos...
@@ -63,7 +63,7 @@ class Bot(commands.Bot):
 
     ######################################################################################################################
 
-    # Método auxiliar para la funcionalidad original de add_token
+    # Metodo auxiliar para la funcionalidad original de add_token
     async def add_token_internal(self, token: str, refresh: str) -> twitchio.authentication.ValidateTokenPayload:
         return await super().add_token(token, refresh)
 
@@ -109,9 +109,9 @@ class Bot(commands.Bot):
                     # Solo mostrar en log si hay cambios o pocas repeticiones
                     if same_count_counter < 3:
                         if not self.message_callback:
-                            self.LOGGER.info(f"\033[1mNúmero de espectadores actuales: \033[31m{viewer_count}\033[0m")
+                            self.LOGGER.info(f"\033[1mNumero de espectadores actuales: \033[31m{viewer_count}\033[0m")
             except Exception as e:
-                self.LOGGER.warning("Error al obtener el número de espectadores: %s", e)
+                self.LOGGER.warning("Error al obtener el numero de espectadores: %s", e)
             
             await asyncio.sleep(180)
     
@@ -126,7 +126,7 @@ class Bot(commands.Bot):
         asyncio.create_task(self.get_viewer_count())
     
     async def event_command_error(self, context: commands.Context, error: Exception):
-        """Maneja errores en la ejecución de comandos"""
+        """Maneja errores en la ejecucion de comandos"""
         # Registra el error en los logs
         self.LOGGER.error(f"Error en comando {context.command.name if context.command else 'desconocido'}: {error}")
         
@@ -144,6 +144,4 @@ class Bot(commands.Bot):
         else:
             # Otros errores inesperados
             self.LOGGER.error(f"Error no manejado: {error}")
-            # Opcional: enviar mensaje genérico al chat
-            # await context.send(f"@{context.author.name} Ocurrió un error al procesar el comando.")
         return

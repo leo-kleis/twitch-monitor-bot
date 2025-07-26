@@ -68,10 +68,10 @@ def main():
 
     with open(full_path, 'w', newline='') as file:
         writer = csv.writer(file)
-        # Modificado el orden de las columnas según lo solicitado
+        # Modificado el orden de las columnas segun lo solicitado
         writer.writerow(["#", "User ID", "Username", "Followed At"])
         for follower in followers:
-            writer.writerow(follower)  # Ya no necesitamos ajustar nada, el orden ya está correcto
+            writer.writerow(follower)  # Ya no necesitamos ajustar nada, el orden ya esta correcto
 
 if __name__ == '__main__':
     main()

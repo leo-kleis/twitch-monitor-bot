@@ -1,12 +1,15 @@
 import os
+import sys
 import asyncio
 import logging
 import asqlite
 import twitchio # v3.0.0b3
+import subprocess
 import recurso.twitch_zk.utils as utils
 from dotenv import load_dotenv
 from clases.twitch_zk import Bot
 from clases.twitch_zk import WebSocketClient
+from recurso.com_pross import command_processor
 from clases.twitch_zk import save_active_chat_history
 
 LOGGER: logging.Logger = logging.getLogger("MAIN")
@@ -16,7 +19,7 @@ file_path_userbots_twitch = os.path.join(os.path.dirname(__file__), 'recurso/twi
 with open(file_path_userbots_twitch, 'r') as file:
     userbots = [line.strip() for line in file]
 
-file_path_user_data_twitch = os.path.join(os.path.dirname(__file__), 'recurso/twitch_zk/data', 'user_data_twitch.json')
+file_path_user_data_twitch = os.path.join(os.path.dirname(__file__), 'bd/data', 'zkleisbotv_twitch.db')
 user_data_twitch = utils.load_user_data_twitch(file_path_user_data_twitch)
 
 def main() -> None:
@@ -26,12 +29,15 @@ def main() -> None:
     db_path_twitch = os.path.join(os.path.dirname(__file__), 'bd/data', 'tokens_twitch.db')
     
     load_dotenv()
-    #* Configuración del websocket usando "Twitch Token Generator"
+    #* Configuracion del websocket usando "Twitch Token Generator"
     oauth_token = os.getenv("TTG_BOT_TOKEN")
     bot_name = os.getenv("BOT")
     broadcaster_name = os.getenv("BROADCASTER")
     
     async def runner() -> None:
+        # Crear un evento para señalar la terminacion del programa
+        shutdown_event = asyncio.Event()
+        
         async with asqlite.create_pool(db_path_twitch) as tdb:
             bot = Bot(
                 token_database=tdb,
@@ -55,18 +61,30 @@ def main() -> None:
                 message_callback=None
             )
             
-            # Iniciar conexión websocket
+            # Iniciar conexion websocket
             connection_success = await ws_client.connect()
+            
+            # Crear las tareas
+            tasks = []
+            tasks.append(asyncio.create_task(command_processor(shutdown_event, file_path_user_data_twitch, user_data_twitch)))
+            tasks.append(asyncio.create_task(bot.start()))
+            
             if connection_success:
-                # Ejecutar el bot y el websocket concurrentemente
-                await asyncio.gather(
-                    bot.start(),
-                    ws_client.listen()
-                )
+                tasks.append(asyncio.create_task(ws_client.listen()))
             else:
-                # Si la conexión websocket falla, ejecutar solo el bot
                 LOGGER.warning("No se pudo conectar al websocket. Ejecutando solo el bot.")
-                await bot.start()
+            
+            # Esperar a que se active el evento de cierre o a que se completen las tareas
+            await shutdown_event.wait()
+            
+            # Cancelar todas las tareas que aún estén en ejecucion
+            for task in tasks:
+                task.cancel()
+            # Esperar a que se completen todas las cancelaciones
+            try:
+                await asyncio.gather(*tasks, return_exceptions=True)
+            except asyncio.CancelledError:
+                pass
     try:
         asyncio.run(runner())
     except KeyboardInterrupt:
@@ -74,5 +92,15 @@ def main() -> None:
     finally:
         save_active_chat_history()
         utils.save_user_data_twitch(file_path_user_data_twitch, user_data_twitch)
+        try:
+            subprocess.run(
+                [sys.executable, os.path.join(os.path.dirname(__file__), 'recurso', 'twitch_zk', 'follow', 'listadofollow.py')],
+                check=True
+            )
+            print("Listado generado correctamente.")
+        except Exception as e:
+            print(f"Error al ejecutar listadofollow.py: {e}")
+            print("Programa finalizado correctamente.")
+        
 if __name__ == "__main__":
     main()

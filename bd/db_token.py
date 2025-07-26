@@ -12,7 +12,7 @@ class Toker:
         self.token_database = pool
     
     async def add_token(self, token: str, refresh: str, bot_instance) -> twitchio.authentication.ValidateTokenPayload:
-        # Llamar al método add_token de la instancia de bot para agregar los tokens internamente
+        # Llamar al metodo add_token de la instancia de bot para agregar los tokens internamente
         resp: twitchio.authentication.ValidateTokenPayload = await bot_instance.add_token_internal(token, refresh)
 
         # Almacenar los tokens en la base de datos SQLite
