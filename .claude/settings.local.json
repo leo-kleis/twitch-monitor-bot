@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pyrefly:*)"
+      "Bash(pyrefly:*)",
+      "Bash(python:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

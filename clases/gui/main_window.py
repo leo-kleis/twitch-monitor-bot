@@ -2,14 +2,17 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QPushButton,
                             QTextEdit, QLabel, QSplitter, QHBoxLayout, QSizePolicy, QFrame,
                             QDialog, QDialogButtonBox, QListWidget, QLineEdit)
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, Qt
+from PyQt5.QtGui import QCloseEvent
 import asyncio
 import asqlite
 import os
+from typing import Optional
 from dotenv import load_dotenv
 from clases.twitch_zk import Bot
 from clases.twitch_zk import Gemi
 from recurso.twitch_zk import utils
 from clases.twitch_zk import WebSocketClient
+from twitchio import PartialUser
 from recurso.gui.style_manager import StyleManager
 
 
@@ -23,8 +26,9 @@ class BotController(QObject):
         super().__init__()
         self.userbots = userbots
         self.user_data_twitch = user_data_twitch
-        self.bot = None
-        self.ws_client = None
+        self.bot: Optional[Bot] = None
+        self.ws_client: Optional[WebSocketClient] = None
+        self.tdb: Optional[asqlite.Pool] = None
         self.running = False
         
         # Configuracion desde el .env
@@ -106,10 +110,26 @@ class BotController(QObject):
 class MainWindow(QMainWindow):
     def __init__(self, userbots, user_data_twitch, file_path_user_data_twitch):
         """Constructor de la ventana principal"""
-        self.file_path_user_data_twitch = file_path_user_data_twitch
         super().__init__()
+        self.file_path_user_data_twitch = file_path_user_data_twitch
         self.setWindowTitle("Twitch Bot Manager")
         self.setGeometry(100, 100, 1000, 600)
+        
+        # Inicializar atributos de UI
+        self.canal_label: QLabel
+        self.title_label: QLabel
+        self.category_label: QLabel
+        self.viewers_label: QLabel
+        self.chat_area: QTextEdit
+        self.users_area: QTextEdit
+        self.start_button_gemi: QPushButton
+        self.stop_button_gemi: QPushButton
+        self.view_users_button: QPushButton
+        # Atributos adicionales para métodos async
+        self.BROADCASTER_ID: Optional[str] = None
+        self.BOT_ID: Optional[str] = None
+        self.usuario_canal: Optional[PartialUser] = None
+        self.charla: Optional[Gemi] = None
         
         # Aplicar estilo oscuro global
         self.setStyleSheet("""
@@ -173,7 +193,7 @@ class MainWindow(QMainWindow):
         
         # Canal del stream
         self.canal_label = QLabel()
-        self.canal_label.setTextFormat(Qt.TextFormat.RichText)
+        self.canal_label.setTextFormat(Qt.RichText)
         if self.bot_controller.broadcaster_name == "kleisarc":
             canal_name = "KleisArc"
         else:
@@ -186,7 +206,7 @@ class MainWindow(QMainWindow):
 
         # Titulo del stream
         self.title_label = QLabel()
-        self.title_label.setTextFormat(Qt.TextFormat.RichText)
+        self.title_label.setTextFormat(Qt.RichText)
         self.title_label.setText(StyleManager.format_label_value("Titulo", "-", 'white', 'green'))
         info_layout.addWidget(self.title_label)
 
@@ -195,7 +215,7 @@ class MainWindow(QMainWindow):
         
         # Categoria del stream
         self.category_label = QLabel()
-        self.category_label.setTextFormat(Qt.TextFormat.RichText)
+        self.category_label.setTextFormat(Qt.RichText)
         self.category_label.setText(StyleManager.format_label_value("Categoria", "-", 'white', 'green'))
         info_layout.addWidget(self.category_label)
         
@@ -205,7 +225,7 @@ class MainWindow(QMainWindow):
         # Contador de espectadores
         self.viewers_label = QLabel()
         self.viewers_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.viewers_label.setTextFormat(Qt.TextFormat.RichText)
+        self.viewers_label.setTextFormat(Qt.RichText)
         self.viewers_label.setText(StyleManager.format_label_value("Espectadores", "-", 'white', 'red'))
         info_layout.addWidget(self.viewers_label)
         
@@ -444,7 +464,7 @@ class MainWindow(QMainWindow):
             viewers_html = StyleManager.format_label_value("Espectadores", message, 'white', 'red')
             
             # Activar interpretacion de HTML
-            self.viewers_label.setTextFormat(Qt.TextFormat.RichText)
+            self.viewers_label.setTextFormat(Qt.RichText)
             
             # Aplicar el texto formateado
             self.viewers_label.setText(viewers_html)
@@ -483,8 +503,8 @@ class MainWindow(QMainWindow):
         category_html = StyleManager.format_label_value("Categoria", category, 'white', 'green')
         
         # Activar interpretacion de HTML en los labels
-        self.title_label.setTextFormat(Qt.TextFormat.RichText)
-        self.category_label.setTextFormat(Qt.TextFormat.RichText)
+        self.title_label.setTextFormat(Qt.RichText)
+        self.category_label.setTextFormat(Qt.RichText)
         
         # Asignar el texto HTML
         self.title_label.setText(title_html)
@@ -632,7 +652,7 @@ class MainWindow(QMainWindow):
             parent_dialog.accept()  # Cerrar el dialogo actual
             self.show_users()  # Volver a abrir con la informacion actualizada
     
-    def closeEvent(self, event):
+    def closeEvent(self, event: Optional[QCloseEvent]):  # type: ignore
         async def shutdown_sequence():
             if self.bot_controller.running:
                 await self.bot_controller.stop_bot()

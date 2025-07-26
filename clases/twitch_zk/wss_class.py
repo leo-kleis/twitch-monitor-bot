@@ -1,5 +1,6 @@
 import logging
 import websockets
+from typing import Optional, Set, Any
 import recurso.twitch_zk.utils as utils
 import recurso.gui.utils_gui as utils_gui
 
@@ -9,8 +10,8 @@ class WebSocketClient:
         self.username = username
         self.channel = channel
         self.uri = "wss://irc-ws.chat.twitch.tv:443"
-        self.websocket = None
-        self.joined_users = set()  # Almacena usuarios conectados
+        self.websocket: Optional[Any] = None
+        self.joined_users: Set[str] = set()  # Almacena usuarios conectados
         self.running = False
         self.userbots = userbots
         self.user_data_twitch = user_data_twitch

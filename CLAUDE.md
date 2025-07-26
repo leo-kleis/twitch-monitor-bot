@@ -30,6 +30,21 @@ pipenv install
 pipenv shell
 ```
 
+**Verificación de Tipado con pyrefly:**
+```bash
+# Comando recomendado para desarrollo (ignora falsos positivos)
+pyrefly check --ignore missing-attribute --ignore bad-argument-type
+
+# Para ver solo conteo de errores
+pyrefly check --ignore missing-attribute --ignore bad-argument-type --output-format omit-errors
+
+# Para formato compacto (una línea por error)
+pyrefly check --ignore missing-attribute --ignore bad-argument-type --output-format min-text
+
+# Comando completo (mostrará falsos positivos de PyQt5 y Google Gemini API)
+pyrefly check
+```
+
 **Configuración del Entorno:**
 - Copiar archivo `.env` con credenciales y tokens requeridos de la API de Twitch
 - Variables de entorno requeridas:
@@ -133,3 +148,50 @@ user_data_twitch = {
 - Datos de usuario persisten entre sesiones vía SQLite
 - Seguimiento de estado de seguidores se integra con llamadas a la API de Twitch
 - Salida de consola con códigos de color para diferentes tipos de mensajes
+
+### Verificación de Código con pyrefly
+
+Este proyecto está configurado para usar pyrefly como type checker. Los errores conocidos que deben ignorarse:
+
+- **missing-attribute**: Falsos positivos de PyQt5 (`Qt.RichText`, `clicked.connect()`) y websockets
+- **bad-argument-type**: Errores de la API externa de Google Gemini (`safety_settings`)
+
+**Errores críticos corregidos:**
+- Atributos implícitos en constructores
+- Tipos de retorno incorrectos en funciones async
+- Overrides de métodos con signaturas incorrectas
+- Tipado de websockets y base de datos
+
+## Funcionalidades Recientes
+
+### Comparación Automática de Seguidores
+
+El sistema ahora incluye comparación automática de seguidores que se ejecuta al finalizar la aplicación:
+
+**Características:**
+- **Análisis automático**: Se ejecuta tanto con comando "salir" como con Ctrl+C
+- **Detección inteligente**: Maneja archivos del mismo día con numeración (1), (2), etc.
+- **Comparación detallada**: Muestra nuevos seguidores y unfollows con información completa
+- **Integración transparente**: No requiere configuración adicional
+
+**Salida de ejemplo:**
+```
+=== ANÁLISIS DE SEGUIDORES ===
+Archivo anterior: [25-07-22] Followers.csv
+Archivo actual: [25-07-23] Followers.csv
+
+--- RESUMEN ---
+Seguidores anteriores: 411
+Seguidores actuales: 413
+Cambio neto: +2
+
++ NUEVOS SEGUIDORES (2):
+  #413 - tincho1492 (ID: 1337425609) - 22/07/25
+  #412 - khaomanee (ID: 152032170) - 22/07/25
+```
+
+**Implementación técnica:**
+- `listadofollow.py` - Funciones de comparación integradas
+- `leer_csv_seguidores()` - Parseo de archivos CSV
+- `obtener_archivo_anterior()` - Detección de archivo previo por timestamp
+- `comparar_con_archivo_anterior()` - Lógica de comparación y reporte

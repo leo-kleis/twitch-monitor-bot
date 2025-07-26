@@ -81,7 +81,7 @@ class Bot(commands.Bot):
     
     ######################################################################################################################
 
-    async def get_viewer_count(self) -> int:
+    async def get_viewer_count(self) -> None:
         last_viewer_count = None
         same_count_counter = 0
         while True:
@@ -125,8 +125,11 @@ class Bot(commands.Bot):
 
         asyncio.create_task(self.get_viewer_count())
     
-    async def event_command_error(self, context: commands.Context, error: Exception):
+    async def event_command_error(self, payload):
         """Maneja errores en la ejecucion de comandos"""
+        context = payload.context
+        error = payload.error
+        
         # Registra el error en los logs
         self.LOGGER.error(f"Error en comando {context.command.name if context.command else 'desconocido'}: {error}")
         

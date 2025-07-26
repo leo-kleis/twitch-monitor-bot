@@ -3,6 +3,7 @@ import json
 import logging
 import asyncio
 import datetime
+from typing import Set, Optional, Dict, List, Any
 
 LOGGER: logging.Logger = logging.getLogger("BOT")
 LOGGER.setLevel(logging.INFO)
@@ -147,7 +148,7 @@ class Gemi:
         filepath = os.path.join(chat_dir, filename)
         
         # Preparar el historial para guardar
-        history_data = {
+        history_data: Dict[str, Any] = {
             "timestamp": now.isoformat(),
             "participants": list(self.participants),
             "message_count": self.message_count,
