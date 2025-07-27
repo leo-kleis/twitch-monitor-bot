@@ -1,2 +1,3 @@
 project-includes = ["**/*"]
 project-excludes = ['**/*venv/**\*']
+python-executable = "C:\\Users\\leosm\\.virtualenvs\\zkleisbotv-WEOd-FWj\\Scripts\\python.exe"

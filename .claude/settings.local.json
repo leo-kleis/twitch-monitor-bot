@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pyrefly:*)",
       "Bash(python:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(pipenv:*)"
     ],
     "deny": []
   }
