@@ -45,8 +45,8 @@ Un bot para Twitch desarrollado en Python que combina monitoreo de chat, gestió
 
 1. Clonar el repositorio:
 ```bash
-git clone https://github.com/tu-usuario/zkleisbotv.git
-cd zkleisbotv
+git clone https://github.com/tu-usuario/twitch-monitor-bot.git
+cd twitch-monitor-bot
 ```
 
 2. Instalar dependencias:
