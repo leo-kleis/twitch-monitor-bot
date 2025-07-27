@@ -21,3 +21,4 @@ __pycache__/
 *.db-wal
 
 CLAUDE.md
+.claude/
