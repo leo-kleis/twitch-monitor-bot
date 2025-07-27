@@ -113,19 +113,6 @@ En el chat de Twitch (prefijo `?`):
 
 ## Arquitectura
 
-### Estructura del Proyecto
-```
-zkleisbotv/
-├── clases/
-│   ├── gui/           # Interfaz PyQt5
-│   └── twitch_zk/     # Lógica del bot
-├── recurso/
-│   ├── gui/           # Recursos gráficos
-│   └── twitch_zk/     # Utilidades y scripts
-├── bd/                # Base de datos SQLite
-└── main.py           # Punto de entrada CLI
-```
-
 ### Flujo de Datos
 1. Conexión Dual: EventSub (oficial) + WebSocket IRC (personalizado)
 2. Procesamiento: Análisis de eventos y mensajes
