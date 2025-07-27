@@ -19,3 +19,5 @@ __pycache__/
 # Ignorar archivos temporales de SQLite
 *.db-shm
 *.db-wal
+
+CLAUDE.md
