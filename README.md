@@ -1,6 +1,6 @@
 Bot para Twitch
 
-![Twitch Status](https://img.shields.io/twitch/status/:kleisarc)
+![Twitch Status](https://img.shields.io/twitch/status/kleisarc)
 [![Python](https://img.shields.io/badge/Python-3.13-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PyQt5](https://img.shields.io/badge/GUI-PyQt5-orange.svg)](https://pypi.org/project/PyQt5/)
