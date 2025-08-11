@@ -1,4 +1,5 @@
 import aiohttp
+import asyncio
 import os
 import logging
 from typing import Optional
@@ -77,9 +78,11 @@ class TwitchMarkerManager:
             
             url = f"{self.base_url}/streams/markers"
             
-            # Usar la sesión reutilizable
+            # Usar la sesión reutilizable con timeout
             session = await self._get_session()
-            async with session.post(url, headers=headers, json=data) as response:
+            timeout = aiohttp.ClientTimeout(total=10.0)  # 10 segundos de timeout
+            
+            async with session.post(url, headers=headers, json=data, timeout=timeout) as response:
                 response_data = await response.json()
                 
                 if response.status == 200:
@@ -100,6 +103,12 @@ class TwitchMarkerManager:
                         'details': response_data
                     }
                     
+        except asyncio.TimeoutError:
+            LOGGER.error("Timeout al crear marcador")
+            return {
+                'success': False,
+                'error': 'Timeout al conectar con la API de Twitch'
+            }
         except Exception as e:
             LOGGER.error(f"Excepción al crear marcador: {e}")
             return {
