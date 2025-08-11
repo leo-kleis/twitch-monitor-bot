@@ -33,7 +33,7 @@ def main() -> None:
     oauth_token = os.getenv("TTG_BOT_TOKEN")
     bot_name = os.getenv("BOT")
     broadcaster_name = os.getenv("BROADCASTER")
-    
+
     async def runner() -> None:
         # Crear un evento para señalar la terminacion del programa
         shutdown_event = asyncio.Event()
@@ -60,7 +60,7 @@ def main() -> None:
                 msg_type=None,
                 message_callback=None
             )
-            
+
             # Iniciar conexion websocket
             connection_success = await ws_client.connect()
             
@@ -90,6 +90,13 @@ def main() -> None:
     except KeyboardInterrupt:
         LOGGER.warning("Apagando debido a KeyboardInterrupt...")    
     finally:
+        # Limpiar hotkeys globales
+        try:
+            from recurso.com_pross import cleanup_hotkeys
+            cleanup_hotkeys()
+        except Exception as e:
+            LOGGER.warning(f"Error al limpiar hotkeys: {e}")
+            
         save_active_chat_history()
         utils.save_user_data_twitch(file_path_user_data_twitch, user_data_twitch)
         try:

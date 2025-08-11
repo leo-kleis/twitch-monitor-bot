@@ -13,6 +13,8 @@ google-generativeai = "*"
 pyqt5 = "*"
 qasync = "*"
 psutil = "*"
+aiohttp = "*"
+pynput = "*"
 
 [dev-packages]
 
