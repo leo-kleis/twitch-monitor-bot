@@ -15,35 +15,51 @@ TOKEN_TTG = os.getenv("TTG_BOT_TOKEN")
 CLIENT_ID_TTG = os.getenv("TTG_BOT_CLIENT_ID")
 TTG_ID = os.getenv("BROADCASTER_ID")
 
+# Clase para manejar el estado de F6
+class F6Handler:
+    def __init__(self):
+        self.marker_manager: Optional[TwitchMarkerManager] = None
+        self.contador = 0
+        self.lock = threading.Lock()
+
+f6_handler = F6Handler()
+
 # Variable global para controlar el hilo de escucha de teclas
 key_listener_thread = None
 key_listener_active = False
 global_hotkey_listener = None
-marker_manager: Optional[TwitchMarkerManager] = None
+marker_manager_main: Optional[TwitchMarkerManager] = None  # Para command_processor
 contador_marker = 0
 
 # Función para manejar el hotkey F6 globalmente
 def on_f6_pressed():
     """Callback que se ejecuta cuando se presiona F6 globalmente"""
+    global f6_handler
+    
+    # Prevenir múltiples ejecuciones simultáneas usando lock
+    if not f6_handler.lock.acquire(blocking=False):
+        print("\nF6 ya se está procesando, espera...")
+        return
+    
     print("\nF6 presionado globalmente - Creando marcador...")
     
     # Crear una nueva tarea asyncio para el marcador
     try:
         # Ejecutar en un hilo separado para no bloquear
-        def create_marker_thread():
-            global marker_manager
+        def create_marker_thread():            
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            if marker_manager is None:
-                marker_manager = TwitchMarkerManager(
-                    token=TOKEN_TTG,
-                    client_id=CLIENT_ID_TTG,
-                    user_id=TTG_ID
-                )
+            
+            # Crear una nueva instancia para cada thread/loop para evitar conflictos
+            temp_marker_manager = TwitchMarkerManager(
+                token=TOKEN_TTG,
+                client_id=CLIENT_ID_TTG,
+                user_id=TTG_ID
+            )
+            
             try:
-                global contador_marker
-                contador_marker += 1
-                result = loop.run_until_complete(marker_manager.create_stream_marker(f"Marcador creado {contador_marker}"))
+                f6_handler.contador += 1
+                result = loop.run_until_complete(temp_marker_manager.create_stream_marker(f"Marcador creado {f6_handler.contador}"))
                 if result and result.get('success'):
                     print("Marcador creado exitosamente!")
                 else:
@@ -52,12 +68,13 @@ def on_f6_pressed():
             except Exception as e:
                 print(f"Error al crear marcador: {e}")
             finally:
-                # Cerrar la sesión del marker manager
+                # Cerrar la sesión temporal
                 try:
-                    loop.run_until_complete(marker_manager.close())
+                    loop.run_until_complete(temp_marker_manager.close())
                 except Exception as e:
-                    print(f"Error al cerrar sesión del marker manager: {e}")
+                    print(f"Error al cerrar sesión temporal: {e}")
                 loop.close()
+                f6_handler.lock.release()  # Liberar el lock
             print("Comando > ", end="", flush=True)
         
         # Ejecutar en hilo separado para no bloquear el hook
@@ -66,6 +83,7 @@ def on_f6_pressed():
         
     except Exception as e:
         print(f"Error al procesar F6: {e}")
+        f6_handler.lock.release()  # Liberar el lock en caso de error
 
 # Función para inicializar el listener global de teclas
 def setup_global_hotkey():
@@ -116,7 +134,7 @@ def key_listener():
 
 # Funcion para procesar comandos asíncronamente
 async def command_processor(shutdown_event, file_path_user_data_twitch, user_data_twitch):
-    global key_listener_thread, key_listener_active, marker_manager
+    global key_listener_thread, key_listener_active, marker_manager_main
     
     print("\n=== Sistema de Administracion de Usuarios ===")
     print("Escribe 'ayuda' para ver los comandos disponibles.")
@@ -157,8 +175,8 @@ async def command_processor(shutdown_event, file_path_user_data_twitch, user_dat
                 print("  F6                           - Tecla rápida GLOBAL para crear marcador")
                 
             elif cmd == "marcador":
-                if marker_manager is None:
-                    marker_manager = TwitchMarkerManager(
+                if marker_manager_main is None:
+                    marker_manager_main = TwitchMarkerManager(
                         token=TOKEN_TTG,
                         client_id=CLIENT_ID_TTG,
                         user_id=TTG_ID
@@ -167,7 +185,7 @@ async def command_processor(shutdown_event, file_path_user_data_twitch, user_dat
                 descripcion = " ".join(args[1:]) if len(args) > 1 else None
                 print("Creando marcador de stream...")
                 try:
-                    success = await marker_manager.create_stream_marker(descripcion)
+                    success = await marker_manager_main.create_stream_marker(descripcion)
                     if not success.get('success', False):
                         print("Verifica que estés transmitiendo y que las variables de entorno estén configuradas correctamente.")
                 except Exception as e:
@@ -234,29 +252,30 @@ async def command_processor(shutdown_event, file_path_user_data_twitch, user_dat
     # Cleanup al terminar
     stop_global_hotkey()
     
-    # Cerrar la sesión del marker manager si existe
-    if marker_manager:
+    # Cerrar la sesión del marker manager principal si existe
+    if marker_manager_main:
         try:
-            await marker_manager.close()
+            await marker_manager_main.close()
         except Exception as e:
-            print(f"Error al cerrar marker_manager: {e}")
+            print(f"Error al cerrar marker_manager_main: {e}")
 
 # Función de cleanup para ser llamada desde main.py
 def cleanup_hotkeys():
     """Función para limpiar recursos al cerrar el programa"""
-    global marker_manager
+    global marker_manager_main
     
     stop_global_hotkey()
     
-    # Cerrar la sesión del marker manager si existe
-    if marker_manager:
+    # Cerrar la instancia principal del marker manager si existe
+    if marker_manager_main:
         try:
-            # Crear un event loop temporal para cerrar la sesión
+            # Crear un event loop temporal para cerrar las sesiones
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            loop.run_until_complete(marker_manager.close())
+            
+            loop.run_until_complete(marker_manager_main.close())
             loop.close()
         except Exception as e:
-            print(f"Error al limpiar marker_manager: {e}")
+            print(f"Error al limpiar marker_manager_main: {e}")
         finally:
-            marker_manager = None
+            marker_manager_main = None
