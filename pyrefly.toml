@@ -1,3 +1,10 @@
 project-includes = ["**/*"]
-project-excludes = ['**/*venv/**\*']
+project-excludes = [
+    '**/*venv/**/*',
+    '**/__pycache__/**/*',
+    '**/node_modules/**/*',
+    '**/.git/**/*',
+    '**/*.pyc'
+]
 python-executable = "C:\\Users\\leosm\\.virtualenvs\\zkleisbotv-WEOd-FWj\\Scripts\\python.exe"
+python-path = [".", "clases", "recurso", "bd"]
