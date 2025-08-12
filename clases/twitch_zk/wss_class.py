@@ -65,12 +65,15 @@ class WebSocketClient:
             return
     
         try:
-            while self.running:
+            while self.running and self.websocket:
                 message = await self.websocket.recv()
     
                 # Manejo de PING/PONG
                 if str(message).startswith("PING"):
-                    await self.websocket.send(f"PONG {str(message).split()[1]}")
+                    if self.websocket is not None:
+                        await self.websocket.send(f"PONG {str(message).split()[1]}")
+                    else:
+                        self.LOGGER.warning("No websocket connection to send PONG")
                     continue
     
                 # Manejo de CLEARCHAT (ban, timeout, clear)

@@ -1,10 +1,25 @@
-project-includes = ["**/*"]
+# Configuración de archivos a incluir/excluir
+project-includes = ["**/*.py"]
 project-excludes = [
-    '**/*venv/**/*',
-    '**/__pycache__/**/*',
-    '**/node_modules/**/*',
-    '**/.git/**/*',
-    '**/*.pyc'
+    "**/.*",
+    "**/*venv/**",
+    "**/__pycache__/**",
+    "**/node_modules/**",
+    "**/*.pyc"
 ]
-python-executable = "C:\\Users\\leosm\\.virtualenvs\\zkleisbotv-WEOd-FWj\\Scripts\\python.exe"
-python-path = [".", "clases", "recurso", "bd"]
+
+# Configuración del intérprete de Python (usar el entorno virtual)
+python-interpreter = "C:\\Users\\leosm\\.virtualenvs\\zkleisbotv-WEOd-FWj\\Scripts\\python.exe"
+
+# Configuración de rutas de búsqueda para imports
+search-path = [
+    ".",
+    "clases",
+    "recurso", 
+    "bd"
+]
+
+# Configuración de errores - deshabilitar import-error si sigue fallando
+[errors]
+# Opcional: descomenta si quieres suprimir los errores de importación temporalmente
+# import-error = false

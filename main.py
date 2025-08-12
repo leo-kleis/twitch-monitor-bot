@@ -8,7 +8,7 @@ import subprocess
 import recurso.twitch_zk.utils as utils
 from dotenv import load_dotenv
 from clases.twitch_zk import Bot
-from clases.twitch_zk import WebSocketClient
+from clases.twitch_zk import TwitchIRCClient
 from recurso.com_pross import command_processor
 from clases.twitch_zk import save_active_chat_history
 
@@ -50,8 +50,8 @@ def main() -> None:
             # Inicializar el bot y el websocket
             await bot.setup_database()
             
-            # Inicializar el cliente websocket
-            ws_client = WebSocketClient(
+            # Inicializar el cliente IRC
+            irc_client = TwitchIRCClient(
                 oauth_token,
                 bot_name,
                 broadcaster_name,
@@ -61,8 +61,8 @@ def main() -> None:
                 message_callback=None
             )
 
-            # Iniciar conexion websocket
-            connection_success = await ws_client.connect()
+            # Iniciar conexion IRC
+            connection_success = await irc_client.connect()
             
             # Crear las tareas
             tasks = []
@@ -70,9 +70,9 @@ def main() -> None:
             tasks.append(asyncio.create_task(bot.start()))
             
             if connection_success:
-                tasks.append(asyncio.create_task(ws_client.listen()))
+                tasks.append(asyncio.create_task(irc_client.listen()))
             else:
-                LOGGER.warning("No se pudo conectar al websocket. Ejecutando solo el bot.")
+                LOGGER.warning("No se pudo conectar al servidor IRC. Ejecutando solo el bot.")
             
             # Esperar a que se active el evento de cierre o a que se completen las tareas
             await shutdown_event.wait()
