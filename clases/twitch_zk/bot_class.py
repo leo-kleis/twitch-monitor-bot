@@ -128,7 +128,7 @@ class Bot(commands.Bot):
     async def event_command_error(self, payload):
         """Maneja errores en la ejecucion de comandos"""
         context = payload.context
-        error = payload.error
+        error = payload.exception
         
         # Registra el error en los logs
         self.LOGGER.error(f"Error en comando {context.command.name if context.command else 'desconocido'}: {error}")
